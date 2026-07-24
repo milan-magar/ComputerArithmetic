@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Booth's Algorithm Calculator</title>
+    <style>
+        /* ── reset & base ── */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background: #0d1117;
+            color: #e6edf3;
+            font-family: 'Segoe UI', 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 24px;
+        }
+
+        .container {
+            max-width: 1300px;
+            width: 100%;
+            background: #161b22;
+            border-radius: 20px;
+            padding: 32px 28px 40px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7);
+            border: 1px solid #30363d;
+        }
+
+        h1 {
+            font-size: 28px;
+            font-weight: 600;
+            letter-spacing: -0.3px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 6px;
+        }
+        h1 small {
+            font-size: 15px;
+            font-weight: 400;
+            color: #8b949e;
+            margin-left: 8px;
+        }
+        .subhead {
+            color: #8b949e;
+            font-size: 15px;
+            border-left: 3px solid #58a6ff;
+            padding-left: 16px;
+            margin-bottom: 28px;
+            margin-top: 4px;
+        }
+
+        /* ── input row ── */
+        .input-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 18px 24px;
+            align-items: flex-end;
+            background: #0d1117;
+            padding: 20px 24px;
+            border-radius: 14px;
+            border: 1px solid #30363d;
+            margin-bottom: 28px;
+        }
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            flex: 1 1 140px;
+            min-width: 120px;
+        }
+        .input-group label {
+            font-size: 13px;
+            font-weight: 500;
+            color: #8b949e;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+        }
+        .input-group input {
+            background: #0d1117;
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            padding: 10px 14px;
+            color: #e6edf3;
+            font-size: 16px;
+            font-weight: 500;
+            transition: border 0.2s, box-shadow 0.2s;
+            width: 100%;
+            font-family: 'JetBrains Mono', 'Consolas', monospace;
+        }
+        .input-group input:focus {
+            outline: none;
+            border-color: #58a6ff;
+            box-shadow: 0 0 0 3px rgba(88, 166, 255, 0.15);
+        }
+        .input-group input[type="number"]::-webkit-inner-spin-button {
+            opacity: 0.5;
+        }
+
+        .btn-calc {
+            background: #238636;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            padding: 10px 32px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.1s;
+            letter-spacing: 0.3px;
+            height: 44px;
+            align-self: flex-end;
+            flex: 0 0 auto;
+            white-space: nowrap;
+        }
+        .btn-calc:hover {
+            background: #2ea043;
+        }
+        .btn-calc:active {
+            transform: scale(0.97);
+        }
+
+        /* ── error / info ── */
+        .message {
+            padding: 12px 18px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            font-weight: 500;
+            display: none;
+        }
+        .message.error {
+            display: block;
+            background: #2d1b1e;
+            border: 1px solid #da3633;
+            color: #f85149;
+        }
+        .message.success {
+            display: block;
+            background: #1c2d24;
+            border: 1px solid #2ea043;
+            color: #7ee787;
+        }
+        .message.info {
+            display: block;
+            background: #1c2333;
+            border: 1px solid #58a6ff;
+            color: #79c0ff;
+        }
+
+        /* ── result summary ── */
+        .result-summary {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 24px 40px;
+            background: #0d1117;
+            border-radius: 14px;
+            padding: 18px 24px;
+            border: 1px solid #30363d;
+            margin-bottom: 28px;
+            align-items: center;
+        }
+        .result-summary .label {
+            font-size: 13px;
+            color: #8b949e;
+            font-weight: 500;
+            letter-spacing: 0.3px;
+        }
+        .result-summary .value {
+            font-family: 'JetBrains Mono', 'Consolas', monospace;
+            font-size: 20px;
+            font-weight: 600;
+            color: #f0f6fc;
+        }
+        .result-summary .value .highlight {
+            color: #58a6ff;
+        }
+        .result-summary .value .highlight-green {
+            color: #7ee787;
+        }
+        .result-summary .value .highlight-orange {
+            color: #d29922;
+        }
+
+        /* ── table wrapper ── */
+        .table-wrap {
+            overflow-x: auto;
+            border-radius: 12px;
+            border: 1px solid #30363d;
+            background: #0d1117;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+            min-width: 720px;
+        }
+
+        thead th {
+            background: #1c2333;
+            color: #8b949e;
+            font-weight: 600;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            padding: 14px 12px;
+            border-bottom: 2px solid #30363d;
+            text-align: center;
+            position: sticky;
+            top: 0;
+            z-index: 2;
+        }
+
+        tbody td {
+            padding: 11px 12px;
+            text-align: center;
+            font-family: 'JetBrains Mono', 'Consolas', monospace;
+            border-bottom: 1px solid #21262d;
+            transition: background 0.15s;
+        }
+
+        tbody tr:hover td {
+            background: #1c2128;
+        }
+
+        tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        /* ── report badge ── */
+        .badge {
+            display: inline-block;
+            padding: 2px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            font-family: 'Segoe UI', sans-serif;
+            letter-spacing: 0.2px;
+        }
+        .badge-init {
+            background: #1c2333;
+            color: #8b949e;
+        }
+        .badge-add {
+            background: #1c2d24;
+            color: #7ee787;
+        }
+        .badge-sub {
+            background: #2d1b1e;
+            color: #f85149;
+        }
+        .badge-noop {
+            background: #252525;
+            color: #8b949e;
+        }
+
+        /* ── responsive ── */
+        @media (max-width: 700px) {
+            .container {
+                padding: 18px 14px;
+            }
+            h1 {
+                font-size: 21px;
+                flex-wrap: wrap;
+            }
+            .input-grid {
+                flex-direction: column;
+                gap: 12px;
+                padding: 16px;
+            }
+            .input-group {
+                flex: 1 1 auto;
+                width: 100%;
+            }
+            .btn-calc {
+                width: 100%;
+                justify-content: center;
+            }
+            .result-summary {
+                flex-direction: column;
+                gap: 8px;
+                align-items: flex-start;
+            }
+            table {
+                font-size: 12px;
+                min-width: 560px;
+            }
+            thead th,
+            tbody td {
+                padding: 8px 6px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            table {
+                font-size: 11px;
+                min-width: 420px;
+            }
+            .container {
+                padding: 12px 8px;
+            }
+        }
+
+        /* ── scrollbar ── */
+        .table-wrap::-webkit-scrollbar {
+            height: 8px;
+        }
+        .table-wrap::-webkit-scrollbar-track {
+            background: #0d1117;
+        }
+        .table-wrap::-webkit-scrollbar-thumb {
+            background: #30363d;
+            border-radius: 6px;
+        }
+        .table-wrap::-webkit-scrollbar-thumb:hover {
+            background: #484f58;
+        }
+
+        /* ── footer note ── */
+        .footnote {
+            margin-top: 18px;
+            color: #484f58;
+            font-size: 13px;
+            text-align: center;
+            letter-spacing: 0.2px;
+        }
+        .footnote code {
+            background: #1c2128;
+            padding: 2px 10px;
+            border-radius: 6px;
+            color: #8b949e;
+            font-family: 'JetBrains Mono', monospace;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+
+        <h1>
+            ⚡ Booth's Algorithm
+            <small>multiplier &amp; multiplicand</small>
+        </h1>
+        <div class="subhead">
+            step–by–step binary multiplication with two's complement
+        </div>
+
+        <!-- ─── INPUT ─── -->
+        <div class="input-grid">
+            <div class="input-group">
+                <label for="multiplicand">Multiplicand (M)</label>
+                <input type="number" id="multiplicand" value="7" step="1" />
+            </div>
+            <div class="input-group">
+                <label for="multiplier">Multiplier (Q)</label>
+                <input type="number" id="multiplier" value="-11" step="1" />
+            </div>
+            <div class="input-group">
+                <label for="bitWidth">Bit width (n)</label>
+                <input type="number" id="bitWidth" value="5" min="2" max="16" step="1" />
+            </div>
+            <button class="btn-calc" id="calcBtn">⟳ Compute</button>
+        </div>
+
+        <!-- ─── MESSAGES ─── -->
+        <div class="message" id="message"></div>
+
+        <!-- ─── RESULT SUMMARY ─── -->
+        <div class="result-summary" id="resultSummary" style="display:none;">
+            <div>
+                <div class="label">Result (A Q)</div>
+                <div class="value" id="resultAQ">—</div>
+            </div>
+            <div>
+                <div class="label">Decimal</div>
+                <div class="value" id="resultDecimal">—</div>
+            </div>
+            <div>
+                <div class="label">M</div>
+                <div class="value" id="resultM">—</div>
+            </div>
+            <div>
+                <div class="label">M+1 (two's complement)</div>
+                <div class="value" id="resultM1">—</div>
+            </div>
+            <div style="margin-left:auto; font-size:13px; color:#8b949e;">
+                <span id="iterCount"></span> iterations
+            </div>
+        </div>
+
+        <!-- ─── TABLE ─── -->
+        <div class="table-wrap" id="tableWrap" style="display:none;">
+            <table>
+                <thead>
+                    <tr>
+                        <th>A</th>
+                        <th>Q</th>
+                        <th>Q₁</th>
+                        <th>M</th>
+                        <th>M+1</th>
+                        <th>count</th>
+                        <th>Report</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                </tbody>
+            </table>
+        </div>
+
+        <div class="footnote">
+            <code>Booth</code> · arithmetic shift right · two's complement
+        </div>
+    </div>
+
+    <script>
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        //  BOOTH'S ALGORITHM  –  full implementation
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+        /**
+         * Convert a signed integer to an n-bit two's complement binary string.
+         */
+        function toBinary(n, bits) {
+            const mask = (1 << bits) - 1;
+            const val = n & mask;
+            return val.toString(2).padStart(bits, '0');
+        }
+
+        /**
+         * Parse an n-bit two's complement binary string to a signed integer.
+         */
+        function fromBinary(bin) {
+            const bits = bin.length;
+            const val = parseInt(bin, 2);
+            if (bin[0] === '1') {
+                return val - (1 << bits);
+            }
+            return val;
+        }
+
+        /**
+         * Arithmetic shift right on {A, Q, Q1} as a combined (2n+1)-bit value.
+         * Returns [newA, newQ, newQ1] as integers (0 … 2^n - 1).
+         */
+        function asr(A, Q, Q1, n) {
+            // Combine: A (n bits) << (n+1) | Q (n bits) << 1 | Q1 (1 bit)
+            const combined = (A << (n + 1)) | (Q << 1) | Q1;
+            // Sign bit is bit (2n) of combined  →  A's MSB
+            const signBit = (A >> (n - 1)) & 1;
+            // Sign-extend to a safe width (we use 32-bit JS integers)
+            let shifted = combined >> 1;
+            if (signBit === 1) {
+                // set bits from position (2n) upward to 1
+                const topMask = ~((1 << (2 * n)) - 1);
+                shifted |= topMask;
+            }
+            // Extract components
+            const newA = (shifted >> (n + 1)) & ((1 << n) - 1);
+            const newQ = (shifted >> 1) & ((1 << n) - 1);
+            const newQ1 = shifted & 1;
+            return [newA, newQ, newQ1];
+        }
+
+        /**
+         * Run Booth's algorithm.
+         * Returns an array of step objects:
+         *   { A, Q, Q1, M, M1, count, report, reportLabel }
+         * where report is 'init' | 'add' | 'sub' | 'noop'
+         */
+        function boothAlgorithm(multiplier, multiplicand, n) {
+            // Input validation
+            const maxVal = (1 << (n - 1)) - 1;
+            const minVal = -(1 << (n - 1));
+            if (multiplier < minVal || multiplier > maxVal ||
+                multiplicand < minVal || multiplicand > maxVal) {
+                throw new Error(`Values must be in range [${minVal}, ${maxVal}] for ${n}-bit two's complement.`);
+            }
+
+            // Mask to n bits
+            const mask = (1 << n) - 1;
+            const M = multiplicand & mask;
+            const Q = multiplier & mask;
+            const M1 = ((~M) + 1) & mask; // two's complement: -M
+
+            let A = 0;
+            let Qreg = Q;
+            let Q1 = 0;
+            let count = n;
+
+            const steps = [];
+
+            // Initial state
+            steps.push({
+                A: A,
+                Q: Qreg,
+                Q1: Q1,
+                M: M,
+                M1: M1,
+                count: count,
+                report: 'init',
+                reportLabel: 'Init'
+            });
+
+            while (count > 0) {
+                const Q0 = Qreg & 1; // LSB of Q
+
+                let report = 'noop';
+                let reportLabel = 'No op';
+
+                // Examine Q0 Q1
+                if (Q0 === 1 && Q1 === 0) {
+                    // 10 → subtract M: A = A + M+1
+                    A = (A + M1) & mask;
+                    report = 'sub';
+                    reportLabel = 'Subtract';
+                } else if (Q0 === 0 && Q1 === 1) {
+                    // 01 → add M: A = A + M
+                    A = (A + M) & mask;
+                    report = 'add';
+                    reportLabel = 'Add';
+                }
+
+                // Arithmetic shift right
+                const [newA, newQ, newQ1] = asr(A, Qreg, Q1, n);
+                A = newA;
+                Qreg = newQ;
+                Q1 = newQ1;
+                count--;
+
+                steps.push({
+                    A: A,
+                    Q: Qreg,
+                    Q1: Q1,
+                    M: M,
+                    M1: M1,
+                    count: count,
+                    report: report,
+                    reportLabel: reportLabel
+                });
+            }
+
+            return steps;
+        }
+
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        //  DOM  &  UI
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+        const multiplicandInput = document.getElementById('multiplicand');
+        const multiplierInput = document.getElementById('multiplier');
+        const bitWidthInput = document.getElementById('bitWidth');
+        const calcBtn = document.getElementById('calcBtn');
+        const messageEl = document.getElementById('message');
+        const resultSummary = document.getElementById('resultSummary');
+        const resultAQ = document.getElementById('resultAQ');
+        const resultDecimal = document.getElementById('resultDecimal');
+        const resultM = document.getElementById('resultM');
+        const resultM1 = document.getElementById('resultM1');
+        const iterCount = document.getElementById('iterCount');
+        const tableWrap = document.getElementById('tableWrap');
+        const tableBody = document.getElementById('tableBody');
+
+        function showMessage(text, type) {
+            messageEl.textContent = text;
+            messageEl.className = 'message ' + type;
+        }
+
+        function hideMessage() {
+            messageEl.className = 'message';
+            messageEl.textContent = '';
+        }
+
+        function compute() {
+            hideMessage();
+            resultSummary.style.display = 'none';
+            tableWrap.style.display = 'none';
+
+            const multiplicand = parseInt(multiplicandInput.value);
+            const multiplier = parseInt(multiplierInput.value);
+            const n = parseInt(bitWidthInput.value);
+
+            if (isNaN(multiplicand) || isNaN(multiplier) || isNaN(n)) {
+                showMessage('Please enter valid numbers.', 'error');
+                return;
+            }
+            if (n < 2) {
+                showMessage('Bit width must be at least 2.', 'error');
+                return;
+            }
+            if (n > 16) {
+                showMessage('Bit width max is 16 for display clarity.', 'error');
+                return;
+            }
+
+            const maxVal = (1 << (n - 1)) - 1;
+            const minVal = -(1 << (n - 1));
+            if (multiplicand < minVal || multiplicand > maxVal) {
+                showMessage(`Multiplicand must be in [${minVal}, ${maxVal}] for ${n}-bit two's complement.`, 'error');
+                return;
+            }
+            if (multiplier < minVal || multiplier > maxVal) {
+                showMessage(`Multiplier must be in [${minVal}, ${maxVal}] for ${n}-bit two's complement.`, 'error');
+                return;
+            }
+
+            try {
+                const steps = boothAlgorithm(multiplier, multiplicand, n);
+
+                // ── render summary ──
+                const last = steps[steps.length - 1];
+                const A_bin = toBinary(last.A, n);
+                const Q_bin = toBinary(last.Q, n);
+                const AQ_bin = A_bin + ' ' + Q_bin;
+                const AQ_val = (last.A << n) | last.Q;
+                const AQ_signed = (AQ_val & (1 << (2 * n - 1))) ? AQ_val - (1 << (2 * n)) : AQ_val;
+
+                resultAQ.textContent = AQ_bin;
+                resultDecimal.textContent = AQ_signed;
+                resultM.textContent = toBinary(last.M, n) + ' (' + multiplicand + ')';
+                resultM1.textContent = toBinary(last.M1, n) + ' (' + (-multiplicand) + ')';
+                iterCount.textContent = steps.length - 1;
+                resultSummary.style.display = 'flex';
+
+                // ── render table ──
+                tableBody.innerHTML = '';
+                steps.forEach((s, idx) => {
+                    const tr = document.createElement('tr');
+
+                    // A
+                    const tdA = document.createElement('td');
+                    tdA.textContent = toBinary(s.A, n);
+                    tr.appendChild(tdA);
+
+                    // Q
+                    const tdQ = document.createElement('td');
+                    tdQ.textContent = toBinary(s.Q, n);
+                    tr.appendChild(tdQ);
+
+                    // Q1
+                    const tdQ1 = document.createElement('td');
+                    tdQ1.textContent = s.Q1;
+                    tr.appendChild(tdQ1);
+
+                    // M
+                    const tdM = document.createElement('td');
+                    tdM.textContent = toBinary(s.M, n);
+                    tr.appendChild(tdM);
+
+                    // M+1
+                    const tdM1 = document.createElement('td');
+                    tdM1.textContent = toBinary(s.M1, n);
+                    tr.appendChild(tdM1);
+
+                    // count
+                    const tdCount = document.createElement('td');
+                    tdCount.textContent = s.count;
+                    tr.appendChild(tdCount);
+
+                    // Report
+                    const tdReport = document.createElement('td');
+                    let badgeClass = 'badge-init';
+                    let label = s.reportLabel;
+                    if (s.report === 'add') {
+                        badgeClass = 'badge-add';
+                        label = '➕ Add';
+                    } else if (s.report === 'sub') {
+                        badgeClass = 'badge-sub';
+                        label = '➖ Sub';
+                    } else if (s.report === 'noop' && idx > 0) {
+                        badgeClass = 'badge-noop';
+                        label = '⏺ No op';
+                    } else if (s.report === 'init') {
+                        label = '⚡ Init';
+                    }
+                    // For the first row, also show "Init"
+                    if (idx === 0) {
+                        label = '⚡ Init';
+                        badgeClass = 'badge-init';
+                    }
+                    const badge = document.createElement('span');
+                    badge.className = 'badge ' + badgeClass;
+                    badge.textContent = label;
+                    tdReport.appendChild(badge);
+                    tr.appendChild(tdReport);
+
+                    tableBody.appendChild(tr);
+                });
+
+                tableWrap.style.display = 'block';
+
+                // scroll to table
+                tableWrap.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+            } catch (err) {
+                showMessage(err.message, 'error');
+            }
+        }
+
+        // ── event listeners ──
+        calcBtn.addEventListener('click', compute);
+
+        // Enter key on any input triggers compute
+        [multiplicandInput, multiplierInput, bitWidthInput].forEach(inp => {
+            inp.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') compute();
+            });
+        });
+
+        // ── auto-run on load with defaults ──
+        window.addEventListener('DOMContentLoaded', () => {
+            // Use default values: 7 and -11 with n=5
+            compute();
+        });
+
+        // ── helper: also allow clicking on the "Compute" button via keyboard ──
+        // (already covered)
+        console.log('🧮 Booth\'s Algorithm ready — vibe coding ✨');
+    </script>
+
+</body>
+</html>
