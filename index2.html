@@ -1,0 +1,850 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Booth's Algorithm · Compact</title>
+    <style>
+        /* ── Reset & base ── */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            background: #e8e0d5;
+            background-image: 
+                linear-gradient(rgba(200,190,180,0.1) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(200,190,180,0.1) 1px, transparent 1px);
+            background-size: 20px 20px;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 12px;
+            font-family: 'Segoe UI', sans-serif;
+        }
+        .container {
+            max-width: 1300px;
+            width: 100%;
+            background: #f5f0e8;
+            background-image: 
+                linear-gradient(rgba(200,190,180,0.08) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(200,190,180,0.08) 1px, transparent 1px);
+            background-size: 20px 20px;
+            border-radius: 16px;
+            padding: 16px 18px 24px;
+            border: 1px solid #d5cdc0;
+            box-shadow: 0 12px 40px rgba(0,0,0,0.1), inset 0 0 60px rgba(255,248,235,0.3);
+            position: relative;
+        }
+        .container::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: repeating-linear-gradient(0deg, transparent, transparent 28px, rgba(200,190,180,0.05) 28px, rgba(200,190,180,0.05) 29px);
+            pointer-events: none;
+            border-radius: 16px;
+        }
+
+        @import url('https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&display=swap');
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-bottom: 4px;
+        }
+        h1 {
+            font-size: 26px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-family: 'Caveat', cursive;
+            color: #4a3f35;
+        }
+        h1 small {
+            font-size: 16px;
+            font-weight: 400;
+            color: #8a7e6e;
+            margin-left: 6px;
+        }
+        .toggle-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-family: 'Caveat', cursive;
+            font-size: 18px;
+            color: #4a3f35;
+        }
+        .toggle-wrapper input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            accent-color: #8a7e6e;
+            cursor: pointer;
+        }
+        .subhead {
+            color: #8a7e6e;
+            font-size: 14px;
+            border-left: 2px solid #b8a898;
+            padding-left: 12px;
+            margin-bottom: 16px;
+            margin-top: 2px;
+            font-family: 'Caveat', cursive;
+        }
+
+        .input-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px 16px;
+            align-items: flex-end;
+            background: rgba(235,225,215,0.4);
+            padding: 12px 16px;
+            border-radius: 12px;
+            border: 1px solid #d5cdc0;
+            margin-bottom: 16px;
+        }
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            flex: 1 1 100px;
+            min-width: 90px;
+        }
+        .input-group label {
+            font-size: 13px;
+            font-weight: 600;
+            color: #6a5f4f;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-family: 'Caveat', cursive;
+        }
+        .input-group input {
+            background: #fcf8f0;
+            border: 1.5px solid #d5cdc0;
+            border-radius: 8px;
+            padding: 6px 10px;
+            color: #3a3028;
+            font-size: 16px;
+            font-weight: 500;
+            width: 100%;
+            font-family: 'Caveat', cursive;
+            transition: border 0.2s, box-shadow 0.2s;
+        }
+        .input-group input:focus {
+            outline: none;
+            border-color: #8a7e6e;
+            box-shadow: 0 0 0 2px rgba(138,126,110,0.15);
+        }
+        .btn-calc {
+            background: #8a7e6e;
+            color: #f5f0e8;
+            border: none;
+            border-radius: 8px;
+            padding: 6px 22px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.1s;
+            height: 36px;
+            align-self: flex-end;
+            flex: 0 0 auto;
+            white-space: nowrap;
+            font-family: 'Caveat', cursive;
+            letter-spacing: 0.3px;
+        }
+        .btn-calc:hover { background: #6a5f4f; }
+        .btn-calc:active { transform: scale(0.97); }
+
+        .message {
+            padding: 8px 14px;
+            border-radius: 8px;
+            margin-bottom: 14px;
+            font-size: 14px;
+            font-weight: 500;
+            display: none;
+            font-family: 'Caveat', cursive;
+        }
+        .message.error {
+            display: block;
+            background: #f5e0e0;
+            border: 1px solid #d4a0a0;
+            color: #8a4040;
+        }
+        .message.success {
+            display: block;
+            background: #e0f0e0;
+            border: 1px solid #a0c0a0;
+            color: #3a6a3a;
+        }
+
+        .result-summary {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px 24px;
+            background: rgba(235,225,215,0.4);
+            border-radius: 12px;
+            padding: 10px 18px;
+            border: 1px solid #d5cdc0;
+            margin-bottom: 16px;
+            align-items: center;
+        }
+        .result-summary .label {
+            font-size: 13px;
+            color: #6a5f4f;
+            font-weight: 600;
+            letter-spacing: 0.3px;
+            font-family: 'Caveat', cursive;
+        }
+        .result-summary .value {
+            font-family: 'Caveat', cursive;
+            font-size: 17px;
+            font-weight: 600;
+            color: #3a3028;
+        }
+
+        .table-wrap {
+            overflow-x: auto;
+            border-radius: 10px;
+            border: 1px solid #d5cdc0;
+            background: rgba(252,248,240,0.5);
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+            min-width: 820px;
+            font-family: 'Caveat', cursive;
+        }
+        thead th {
+            background: rgba(220,210,195,0.4);
+            color: #5a4f3f;
+            font-weight: 700;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            padding: 8px 6px;
+            border-bottom: 2px solid #c5bdb0;
+            text-align: center;
+            position: sticky;
+            top: 0;
+            z-index: 2;
+        }
+        tbody td {
+            padding: 6px 6px;
+            text-align: center;
+            font-family: 'Caveat', cursive;
+            font-size: 14px;
+            vertical-align: middle;
+            background: rgba(252,248,240,0.2);
+            color: #3a3028;
+        }
+
+        .table-wrap th, .table-wrap td {
+            border-right: 1px solid rgba(180,170,155,0.2);
+        }
+        .table-wrap th:last-child, .table-wrap td:last-child { border-right: none; }
+        .table-wrap th:first-child, .table-wrap td:first-child { border-left: 1px solid rgba(180,170,155,0.2); }
+
+        tbody tr td {
+            border-bottom: 1px solid rgba(180,170,155,0.15);
+        }
+        tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        .a-stack {
+            display: inline-block;
+            text-align: right;
+            line-height: 1.4;
+            font-size: 13px;
+            font-family: 'Caveat', cursive;
+        }
+        .a-stack .line { display: block; white-space: nowrap; }
+        .a-stack .op-symbol { color: #b87040; font-weight: 700; }
+        .a-stack .result { color: #3a8a3a; font-weight: 700; }
+        .a-stack .discard { color: #c04040; font-weight: 700; }
+        .a-stack .dash { color: #a09080; letter-spacing: 1px; }
+
+        .badge {
+            display: inline-block;
+            padding: 1px 10px;
+            border-radius: 16px;
+            font-size: 12px;
+            font-weight: 600;
+            font-family: 'Caveat', cursive;
+            letter-spacing: 0.2px;
+        }
+        .badge-init { background: rgba(200,190,175,0.3); color: #5a4f3f; }
+        .badge-add { background: rgba(60,180,60,0.15); color: #2a7a2a; }
+        .badge-sub { background: rgba(200,60,60,0.15); color: #8a3030; }
+        .badge-noop { background: rgba(160,150,135,0.15); color: #6a5f4f; }
+        .badge-asr { background: rgba(70,130,200,0.15); color: #3a6a8a; }
+        .badge-asr .arrow { color: #b87040; margin-left: 3px; }
+
+        .highlight-lsb { color: #4a7aaa; font-weight: 700; }
+        .highlight-qminus1 { color: #b87040; font-weight: 700; }
+        .q0qminus1-display { font-weight: 700; letter-spacing: 1px; }
+        .q0qminus1-display .q0 { color: #4a7aaa; }
+        .q0qminus1-display .qminus1 { color: #b87040; }
+
+        .footnote {
+            margin-top: 12px;
+            color: #8a7e6e;
+            font-size: 12px;
+            text-align: center;
+            font-family: 'Caveat', cursive;
+        }
+        .footnote code {
+            background: rgba(200,190,175,0.25);
+            padding: 1px 10px;
+            border-radius: 4px;
+            color: #5a4f3f;
+            font-family: 'Caveat', cursive;
+        }
+
+        .final-expansion {
+            margin-top: 14px;
+            background: rgba(252,248,240,0.5);
+            border-radius: 12px;
+            padding: 12px 18px;
+            border: 1px solid #d5cdc0;
+            font-family: 'Caveat', cursive;
+            color: #3a3028;
+        }
+        .final-expansion .highlight { color: #4a7aaa; }
+        .final-expansion .highlight-green { color: #3a8a3a; }
+        .final-expansion .highlight-orange { color: #b87040; }
+        .final-expansion .eq-sign {
+            display: inline-block;
+            width: 1.6em;
+            text-align: right;
+            color: #8a7e6e;
+            font-weight: 400;
+        }
+        .final-expansion .line-content { display: inline-block; }
+        .final-expansion .result-line { color: #3a8a3a; font-weight: 700; margin-top: 0; }
+        .final-expansion .zero-term { color: #6a5f4f; }
+        .final-expansion .line-wrapper {
+            padding-left: 24px;
+            line-height: 1.8;
+            font-size: 17px;
+        }
+        .final-expansion .result-line {
+            color: #3a8a3a;
+            font-weight: 700;
+            margin-top: 0;
+        }
+
+        @media (max-width: 700px) {
+            .container { padding: 12px 10px; }
+            h1 { font-size: 22px; }
+            .header { flex-direction: column; align-items: flex-start; gap: 6px; }
+            .input-grid { flex-direction: column; gap: 8px; padding: 12px; }
+            .input-group { flex: 1 1 auto; width: 100%; }
+            .btn-calc { width: 100%; }
+            table { font-size: 12px; min-width: 600px; }
+            .final-expansion .line-wrapper { padding-left: 16px; font-size: 15px; }
+        }
+        @media (max-width: 480px) {
+            table { font-size: 11px; min-width: 480px; }
+            .final-expansion .line-wrapper { padding-left: 8px; font-size: 14px; }
+        }
+        .table-wrap::-webkit-scrollbar {
+            height: 6px;
+        }
+        .table-wrap::-webkit-scrollbar-track { background: #f0ebe3; }
+        .table-wrap::-webkit-scrollbar-thumb { background: #c5bdb0; border-radius: 4px; }
+        .table-wrap::-webkit-scrollbar-thumb:hover { background: #b0a898; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <!-- ─── HEADER WITH TOGGLE ─── -->
+        <div class="header">
+            <h1>✎ Booth's Algorithm <small>compact view</small></h1>
+            <div class="toggle-wrapper">
+                <label for="showStepsToggle" style="cursor: pointer;">Show Arithmetic Steps</label>
+                <input type="checkbox" id="showStepsToggle" checked />
+            </div>
+        </div>
+        <div class="subhead">step‑by‑step · paper texture</div>
+
+        <!-- ─── INPUT ─── -->
+        <div class="input-grid">
+            <div class="input-group">
+                <label for="multiplicand">Multiplicand (M)</label>
+                <input type="number" id="multiplicand" value="7" step="1" />
+            </div>
+            <div class="input-group">
+                <label for="multiplier">Multiplier (Q)</label>
+                <input type="number" id="multiplier" value="-11" step="1" />
+            </div>
+            <div class="input-group">
+                <label for="bitWidth">Bit width (n)</label>
+                <input type="number" id="bitWidth" value="5" min="2" max="16" step="1" />
+            </div>
+            <button class="btn-calc" id="calcBtn">✎ Compute</button>
+        </div>
+
+        <div class="message" id="message"></div>
+
+        <!-- ─── SUMMARY ─── -->
+        <div class="result-summary" id="resultSummary" style="display:none;">
+            <div>
+                <div class="label">Multiplicand M</div>
+                <div class="value" id="displayM">—</div>
+            </div>
+            <div>
+                <div class="label">Multiplier Q</div>
+                <div class="value" id="displayQ">—</div>
+            </div>
+            <div>
+                <div class="label">M'+1</div>
+                <div class="value" id="displayM1">—</div>
+            </div>
+            <div style="margin-left:auto; font-size:13px; color:#8a7e6e; font-family:'Caveat',cursive;">
+                <span id="iterCount"></span> iterations
+            </div>
+        </div>
+
+        <!-- ─── TABLE ─── -->
+        <div class="table-wrap" id="tableWrap" style="display:none;">
+            <table>
+                <thead>
+                    <tr>
+                        <th>A</th>
+                        <th>Q</th>
+                        <th>Q₋₁</th>
+                        <th>M</th>
+                        <th>M'+1</th>
+                        <th>Q₀Q₋₁</th>
+                        <th>count</th>
+                        <th>Remarks</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody"></tbody>
+            </table>
+        </div>
+
+        <!-- ─── FINAL EXPANSION ─── -->
+        <div id="finalExpansion" style="display:none;" class="final-expansion"></div>
+
+        <div class="footnote"><code>Booth</code> · two's complement · arithmetic shift right (→) · carry shown as "discard 1"</div>
+    </div>
+
+    <script>
+        // ─── Helpers ──────────────────────────────────────────────
+        function toBinary(n, bits) {
+            const mask = (1 << bits) - 1;
+            return (n & mask).toString(2).padStart(bits, '0');
+        }
+
+        function asr(A, Q, Q1, n) {
+            const combined = (A << (n + 1)) | (Q << 1) | Q1;
+            const signBit = (A >> (n - 1)) & 1;
+            let shifted = combined >> 1;
+            if (signBit === 1) {
+                const topMask = ~((1 << (2 * n)) - 1);
+                shifted |= topMask;
+            }
+            const newA = (shifted >> (n + 1)) & ((1 << n) - 1);
+            const newQ = (shifted >> 1) & ((1 << n) - 1);
+            const newQ1 = shifted & 1;
+            return [newA, newQ, newQ1];
+        }
+
+        function highlightQ(qBin, isShift) {
+            if (!isShift) return qBin;
+            const lsb = qBin[qBin.length - 1];
+            const rest = qBin.slice(0, -1);
+            return rest + `<span class="highlight-lsb">${lsb}</span>`;
+        }
+
+        function highlightQminus1(val, isShift) {
+            if (!isShift) return String(val);
+            return `<span class="highlight-qminus1">${val}</span>`;
+        }
+
+        function formatQ0Qminus1(q0, qminus1) {
+            return `<span class="q0qminus1-display"><span class="q0">${q0}</span><span class="qminus1">${qminus1}</span></span>`;
+        }
+
+        // ─── Booth's algorithm ────────────────────────────────────
+        function boothAlgorithmWithSteps(multiplier, multiplicand, n) {
+            const maxVal = (1 << (n - 1)) - 1;
+            const minVal = -(1 << (n - 1));
+            if (multiplier < minVal || multiplier > maxVal ||
+                multiplicand < minVal || multiplicand > maxVal) {
+                throw new Error(`Values must be in range [${minVal}, ${maxVal}] for ${n}-bit two's complement.`);
+            }
+
+            const mask = (1 << n) - 1;
+            const M = multiplicand & mask;
+            const Q = multiplier & mask;
+            const M1 = ((~M) + 1) & mask;
+
+            let A = 0;
+            let Qreg = Q;
+            let Qminus1 = 0;
+            let count = n;
+            const rows = [];
+
+            // ── Init row ──
+            rows.push({
+                type: 'init',
+                aDisplay: toBinary(A, n),
+                qBin: toBinary(Qreg, n),
+                qMinus1: Qminus1,
+                q0: Qreg & 1,
+                mBin: toBinary(M, n),
+                m1Bin: toBinary(M1, n),
+                count: count,
+                remark: 'Initialization',
+                badgeClass: 'badge-init'
+            });
+
+            // ── Iterations ──
+            while (count > 0) {
+                const Q0 = Qreg & 1;
+                let opType = 'noop';
+                let remark = '';
+                let badgeClass = 'badge-noop';
+                let aBefore = A;
+                let aOperand = 0;
+                let aResult = A;
+                let carry = false;
+                let opSymbol = '';
+
+                if (Q0 === 0 && Qminus1 === 1) {
+                    const sum = A + M;
+                    aOperand = M;
+                    aResult = sum & mask;
+                    carry = (sum & ~mask) !== 0;
+                    opType = 'add';
+                    remark = 'A ← A + M  (Q₀Q₋₁ = 01)';
+                    badgeClass = 'badge-add';
+                    opSymbol = '+';
+                    A = aResult;
+                } else if (Q0 === 1 && Qminus1 === 0) {
+                    const sum = A + M1;
+                    aOperand = M1;
+                    aResult = sum & mask;
+                    carry = (sum & ~mask) !== 0;
+                    opType = 'sub';
+                    remark = 'A ← A − M  (Q₀Q₋₁ = 10)';
+                    badgeClass = 'badge-sub';
+                    opSymbol = '−';
+                    A = aResult;
+                } else {
+                    opType = 'noop';
+                    remark = 'No operation (Q₀Q₋₁ = 00 or 11)';
+                    badgeClass = 'badge-noop';
+                    opSymbol = '—';
+                    aResult = A;
+                    carry = false;
+                }
+
+                // ── Build multi‑line A display for full detail mode ──
+                let aDisplayLines = [];
+                if (opType === 'add' || opType === 'sub') {
+                    const aBeforeStr = toBinary(aBefore, n);
+                    const aOperandStr = toBinary(aOperand, n);
+                    const aResultStr = toBinary(aResult, n);
+                    const fullSum = aBefore + aOperand;
+                    const fullSumStr = fullSum.toString(2).padStart(n + 1, '0');
+                    aDisplayLines.push(`  ${aBeforeStr}`);
+                    aDisplayLines.push(`${opSymbol} ${aOperandStr}`);
+                    aDisplayLines.push(`───────`);
+                    if (carry) {
+                        aDisplayLines.push(`= ${fullSumStr}`);
+                        aDisplayLines.push(`  <span class="discard">discard 1</span>`);
+                        aDisplayLines.push(`  <span class="result">${aResultStr}</span>`);
+                    } else {
+                        aDisplayLines.push(`= <span class="result">${fullSumStr}</span>`);
+                    }
+                } else {
+                    aDisplayLines.push(`  ${toBinary(aBefore, n)}`);
+                    aDisplayLines.push(`  (unchanged)`);
+                }
+
+                // ── Store the result value (truncated) for simplified view ──
+                const resultValue = toBinary(aResult, n);
+
+                // ── Operation row ──
+                rows.push({
+                    type: 'operation',
+                    aDisplayLines: aDisplayLines,   // full multi-line stack
+                    resultValue: resultValue,       // just the truncated result (green)
+                    qBin: toBinary(Qreg, n),
+                    qMinus1: Qminus1,
+                    q0: Q0,
+                    mBin: '-',
+                    m1Bin: '-',
+                    count: '-',
+                    remark: remark,
+                    badgeClass: badgeClass
+                });
+
+                // ── Arithmetic Shift Right ──
+                const [newA, newQ, newQminus1] = asr(A, Qreg, Qminus1, n);
+                A = newA;
+                Qreg = newQ;
+                Qminus1 = newQminus1;
+                count--;
+
+                // ── Shift row ──
+                rows.push({
+                    type: 'shift',
+                    aDisplay: toBinary(A, n),
+                    qBin: toBinary(Qreg, n),
+                    qMinus1: Qminus1,
+                    q0: Qreg & 1,
+                    mBin: '-',
+                    m1Bin: '-',
+                    count: count,
+                    remark: 'Arithmetic Shift Right →',
+                    badgeClass: 'badge-asr'
+                });
+            }
+
+            return rows;
+        }
+
+        // ─── DOM ──────────────────────────────────────────────────
+        const multiplicandInput = document.getElementById('multiplicand');
+        const multiplierInput = document.getElementById('multiplier');
+        const bitWidthInput = document.getElementById('bitWidth');
+        const calcBtn = document.getElementById('calcBtn');
+        const messageEl = document.getElementById('message');
+        const resultSummary = document.getElementById('resultSummary');
+        const displayM = document.getElementById('displayM');
+        const displayQ = document.getElementById('displayQ');
+        const displayM1 = document.getElementById('displayM1');
+        const iterCount = document.getElementById('iterCount');
+        const tableWrap = document.getElementById('tableWrap');
+        const tableBody = document.getElementById('tableBody');
+        const finalExpansion = document.getElementById('finalExpansion');
+        const showStepsToggle = document.getElementById('showStepsToggle');
+
+        function showMessage(text, type) {
+            messageEl.textContent = text;
+            messageEl.className = 'message ' + type;
+        }
+        function hideMessage() {
+            messageEl.className = 'message';
+            messageEl.textContent = '';
+        }
+
+        function compute() {
+            hideMessage();
+            resultSummary.style.display = 'none';
+            tableWrap.style.display = 'none';
+            finalExpansion.style.display = 'none';
+
+            const multiplicand = parseInt(multiplicandInput.value);
+            const multiplier = parseInt(multiplierInput.value);
+            const n = parseInt(bitWidthInput.value);
+
+            if (isNaN(multiplicand) || isNaN(multiplier) || isNaN(n)) {
+                showMessage('Please enter valid numbers.', 'error');
+                return;
+            }
+            if (n < 2 || n > 16) {
+                showMessage('Bit width must be between 2 and 16.', 'error');
+                return;
+            }
+            const maxVal = (1 << (n - 1)) - 1;
+            const minVal = -(1 << (n - 1));
+            if (multiplicand < minVal || multiplicand > maxVal) {
+                showMessage(`Multiplicand must be in [${minVal}, ${maxVal}] for ${n}-bit two's complement.`, 'error');
+                return;
+            }
+            if (multiplier < minVal || multiplier > maxVal) {
+                showMessage(`Multiplier must be in [${minVal}, ${maxVal}] for ${n}-bit two's complement.`, 'error');
+                return;
+            }
+
+            try {
+                const allRows = boothAlgorithmWithSteps(multiplier, multiplicand, n);
+
+                const M_val = multiplicand & ((1 << n) - 1);
+                const M1_val = ((~M_val) + 1) & ((1 << n) - 1);
+                displayM.textContent = toBinary(M_val, n) + ' (' + multiplicand + ')';
+                displayQ.textContent = toBinary(multiplier & ((1 << n) - 1), n) + ' (' + multiplier + ')';
+                displayM1.textContent = toBinary(M1_val, n) + ' (' + (-multiplicand) + ')';
+                const shiftRows = allRows.filter(r => r.type === 'shift');
+                iterCount.textContent = shiftRows.length;
+                resultSummary.style.display = 'flex';
+
+                // ─── Determine display mode ───
+                const showFullArithmetic = showStepsToggle.checked;
+
+                // ─── Render table ───
+                tableBody.innerHTML = '';
+                allRows.forEach((row) => {
+                    const tr = document.createElement('tr');
+
+                    // ─── A column ───
+                    const tdA = document.createElement('td');
+                    if (row.type === 'operation') {
+                        if (showFullArithmetic) {
+                            // Show full multi-line arithmetic stack
+                            const stack = document.createElement('div');
+                            stack.className = 'a-stack';
+                            row.aDisplayLines.forEach(line => {
+                                const span = document.createElement('span');
+                                span.className = 'line';
+                                if (line.includes('<span')) {
+                                    span.innerHTML = line;
+                                } else {
+                                    span.textContent = line;
+                                    if (line.includes('+') || line.includes('−')) span.classList.add('op-symbol');
+                                    else if (line.includes('────')) span.classList.add('dash');
+                                }
+                                stack.appendChild(span);
+                            });
+                            tdA.appendChild(stack);
+                        } else {
+                            // Show only the truncated result in green
+                            const resultSpan = document.createElement('span');
+                            resultSpan.style.color = '#3a8a3a';
+                            resultSpan.style.fontWeight = '700';
+                            resultSpan.textContent = row.resultValue;
+                            tdA.appendChild(resultSpan);
+                        }
+                    } else {
+                        // init or shift: plain binary
+                        tdA.textContent = row.aDisplay;
+                    }
+                    tr.appendChild(tdA);
+
+                    // ─── Q (highlight LSB only on shift rows) ───
+                    const tdQ = document.createElement('td');
+                    const isShift = (row.type === 'shift');
+                    tdQ.innerHTML = highlightQ(row.qBin, isShift);
+                    tr.appendChild(tdQ);
+
+                    // ─── Q₋₁ (highlight only on shift rows) ───
+                    const tdQminus1 = document.createElement('td');
+                    tdQminus1.innerHTML = highlightQminus1(row.qMinus1, isShift);
+                    tr.appendChild(tdQminus1);
+
+                    // ─── M ───
+                    const tdM = document.createElement('td');
+                    tdM.textContent = row.mBin;
+                    tr.appendChild(tdM);
+
+                    // ─── M'+1 ───
+                    const tdM1 = document.createElement('td');
+                    tdM1.textContent = row.m1Bin;
+                    tr.appendChild(tdM1);
+
+                    // ─── Q₀Q₋₁ ───
+                    const tdQ0Qminus1 = document.createElement('td');
+                    tdQ0Qminus1.innerHTML = formatQ0Qminus1(row.q0, row.qMinus1);
+                    tr.appendChild(tdQ0Qminus1);
+
+                    // ─── count ───
+                    const tdCount = document.createElement('td');
+                    tdCount.textContent = row.count;
+                    tr.appendChild(tdCount);
+
+                    // ─── Remarks ───
+                    const tdRemark = document.createElement('td');
+                    const badge = document.createElement('span');
+                    badge.className = 'badge ' + row.badgeClass;
+                    if (row.type === 'shift') {
+                        badge.innerHTML = row.remark;
+                    } else {
+                        badge.textContent = row.remark;
+                    }
+                    tdRemark.appendChild(badge);
+                    tr.appendChild(tdRemark);
+
+                    tableBody.appendChild(tr);
+                });
+
+                tableWrap.style.display = 'block';
+
+                // ─── Final expansion (always shown) ───
+                const lastShift = [...allRows].reverse().find(r => r.type === 'shift');
+                const lastRow = lastShift || allRows[allRows.length - 1];
+                const A_bin = lastRow.aDisplay || '0';
+                const Q_bin = lastRow.qBin;
+                const combined = A_bin + Q_bin;
+                const len = combined.length;
+
+                let powerTerms = [];
+                let numericTerms = [];
+                let total = 0;
+                for (let i = 0; i < len; i++) {
+                    const pos = len - 1 - i;
+                    const weight = (i === 0) ? -Math.pow(2, pos) : Math.pow(2, pos);
+                    const bit = combined[i];
+                    if (bit === '1') {
+                        const powerStr = (i === 0) ? `-2<sup>${pos}</sup>` : `+2<sup>${pos}</sup>`;
+                        const powerClass = (i === 0) ? 'highlight-orange' : 'highlight';
+                        const numValue = (i === 0) ? -Math.pow(2, pos) : Math.pow(2, pos);
+                        const numStr = (i === 0) ? `${numValue}` : `+${numValue}`;
+                        const numClass = (i === 0) ? 'highlight-orange' : 'highlight';
+                        powerTerms.push(`<span class="${powerClass}">${powerStr}</span>`);
+                        numericTerms.push(`<span class="${numClass}">${numStr}</span>`);
+                        total += (i === 0 ? -Math.pow(2, pos) : Math.pow(2, pos));
+                    } else {
+                        const powerStr = (i === 0) ? `0·2<sup>${pos}</sup>` : `+0·2<sup>${pos}</sup>`;
+                        const numStr = (i === 0) ? '0' : '+0';
+                        powerTerms.push(`<span class="zero-term">${powerStr}</span>`);
+                        numericTerms.push(`<span class="zero-term">${numStr}</span>`);
+                    }
+                }
+
+                let powerLine = powerTerms.join(' ');
+                if (len > 0 && combined[0] === '0') {
+                    powerLine = powerLine.replace(/^\+0·2<sup>\d+<\/sup> /, '');
+                }
+                let numericLine = numericTerms.join(' ');
+                if (len > 0 && combined[0] === '0') {
+                    numericLine = numericLine.replace(/^\+0 /, '');
+                }
+
+                finalExpansion.innerHTML = `
+                    <div style="font-weight:600; margin-bottom:4px; font-size:18px; font-family:'Caveat',cursive;">
+                        Result in AQ = <span class="highlight">${A_bin} ${Q_bin}</span>
+                    </div>
+                    <div class="line-wrapper">
+                        <span class="eq-sign">=</span> <span class="line-content">${powerLine}</span>
+                    </div>
+                    <div class="line-wrapper">
+                        <span class="eq-sign">=</span> <span class="line-content">${numericLine}</span>
+                    </div>
+                    <div class="line-wrapper result-line">
+                        <span class="eq-sign">=</span> <span class="highlight-green">${total}</span>
+                    </div>
+                `;
+                finalExpansion.style.display = 'block';
+
+                // ─── Scroll ───
+                setTimeout(() => {
+                    tableWrap.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }, 100);
+
+            } catch (err) {
+                showMessage(err.message, 'error');
+            }
+        }
+
+        // ─── Toggle: re‑compute when toggled ───
+        showStepsToggle.addEventListener('change', compute);
+
+        calcBtn.addEventListener('click', compute);
+        [multiplicandInput, multiplierInput, bitWidthInput].forEach(inp => {
+            inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') compute(); });
+        });
+        window.addEventListener('DOMContentLoaded', compute);
+    </script>
+</body>
+</html>
