@@ -3,407 +3,26 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Booth's Algorithm · detailed steps</title>
-    <style>
-        /* ── Reset & base ── */
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-        body {
-            background: #0d1117;
-            color: #e6edf3;
-            font-family: 'Segoe UI', 'SF Pro Display', sans-serif;
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 24px;
-        }
-        .container {
-            max-width: 1500px;
-            width: 100%;
-            background: #161b22;
-            border-radius: 20px;
-            padding: 32px 28px 40px;
-            border: 1px solid #30363d;
-            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7);
-        }
-        h1 {
-            font-size: 28px;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin-bottom: 6px;
-        }
-        h1 small {
-            font-size: 15px;
-            font-weight: 400;
-            color: #8b949e;
-            margin-left: 8px;
-        }
-        .subhead {
-            color: #8b949e;
-            font-size: 15px;
-            border-left: 3px solid #58a6ff;
-            padding-left: 16px;
-            margin-bottom: 28px;
-            margin-top: 4px;
-        }
-        .input-grid {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 18px 24px;
-            align-items: flex-end;
-            background: #0d1117;
-            padding: 20px 24px;
-            border-radius: 14px;
-            border: 1px solid #30363d;
-            margin-bottom: 28px;
-        }
-        .input-group {
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-            flex: 1 1 140px;
-            min-width: 120px;
-        }
-        .input-group label {
-            font-size: 13px;
-            font-weight: 500;
-            color: #8b949e;
-            text-transform: uppercase;
-            letter-spacing: 0.4px;
-        }
-        .input-group input {
-            background: #0d1117;
-            border: 1px solid #30363d;
-            border-radius: 8px;
-            padding: 10px 14px;
-            color: #e6edf3;
-            font-size: 16px;
-            font-weight: 500;
-            width: 100%;
-            font-family: 'JetBrains Mono', 'Consolas', monospace;
-        }
-        .input-group input:focus {
-            outline: none;
-            border-color: #58a6ff;
-            box-shadow: 0 0 0 3px rgba(88, 166, 255, 0.15);
-        }
-        .btn-calc {
-            background: #238636;
-            color: #fff;
-            border: none;
-            border-radius: 8px;
-            padding: 10px 32px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: background 0.2s, transform 0.1s;
-            height: 44px;
-            align-self: flex-end;
-            flex: 0 0 auto;
-            white-space: nowrap;
-        }
-        .btn-calc:hover {
-            background: #2ea043;
-        }
-        .btn-calc:active {
-            transform: scale(0.97);
-        }
-        .message {
-            padding: 12px 18px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-            font-size: 14px;
-            font-weight: 500;
-            display: none;
-        }
-        .message.error {
-            display: block;
-            background: #2d1b1e;
-            border: 1px solid #da3633;
-            color: #f85149;
-        }
-        .message.success {
-            display: block;
-            background: #1c2d24;
-            border: 1px solid #2ea043;
-            color: #7ee787;
-        }
-        .result-summary {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 18px 32px;
-            background: #0d1117;
-            border-radius: 14px;
-            padding: 18px 24px;
-            border: 1px solid #30363d;
-            margin-bottom: 28px;
-            align-items: center;
-        }
-        .result-summary .label {
-            font-size: 13px;
-            color: #8b949e;
-            font-weight: 500;
-            letter-spacing: 0.3px;
-        }
-        .result-summary .value {
-            font-family: 'JetBrains Mono', 'Consolas', monospace;
-            font-size: 18px;
-            font-weight: 600;
-            color: #f0f6fc;
-        }
-        .table-wrap {
-            overflow-x: auto;
-            border-radius: 12px;
-            border: 1px solid #30363d;
-            background: #0d1117;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 14px;
-            min-width: 950px;
-        }
-        thead th {
-            background: #1c2333;
-            color: #8b949e;
-            font-weight: 600;
-            font-size: 12px;
-            text-transform: uppercase;
-            letter-spacing: 0.6px;
-            padding: 14px 10px;
-            border-bottom: 2px solid #30363d;
-            text-align: center;
-            position: sticky;
-            top: 0;
-            z-index: 2;
-        }
-        tbody td {
-            padding: 10px 10px;
-            text-align: center;
-            font-family: 'JetBrains Mono', 'Consolas', monospace;
-            vertical-align: middle;
-            background: #0d1117;
-        }
-
-        /* ── Vertical lines between columns ── */
-        .table-wrap th,
-        .table-wrap td {
-            border-right: 1px solid rgba(255, 255, 255, 0.06);
-        }
-        .table-wrap th:last-child,
-        .table-wrap td:last-child {
-            border-right: none;
-        }
-        .table-wrap th:first-child,
-        .table-wrap td:first-child {
-            border-left: 1px solid rgba(255, 255, 255, 0.06);
-        }
-
-        /* ── Horizontal grouping lines ── */
-        /* Operation → Shift: subtle line */
-        tbody tr.operation-row td {
-            border-bottom: 1px solid rgba(255, 255, 255, 0.07);
-        }
-
-        /* Shift row: no bottom border (group-end handles the separator) */
-        tbody tr.shift-row td {
-            border-bottom: none;
-        }
-
-        /* Group separator: less bold blue line */
-        tbody tr.group-end td {
-            border-bottom: 1px solid rgba(88, 166, 255, 0.3);
-        }
-
-        /* ── A‑column multi‑line arithmetic ── */
-        .a-stack {
-            display: inline-block;
-            text-align: right;
-            line-height: 1.6;
-            font-size: 13px;
-        }
-        .a-stack .line {
-            display: block;
-            white-space: nowrap;
-        }
-        .a-stack .op-symbol {
-            color: #f0883e;
-            font-weight: 700;
-        }
-        .a-stack .result {
-            color: #7ee787;
-            font-weight: 600;
-        }
-        .a-stack .discard {
-            color: #f85149;
-            font-weight: 600;
-        }
-        .a-stack .dash {
-            color: #484f58;
-            letter-spacing: 1px;
-        }
-
-        /* ── Badges ── */
-        .badge {
-            display: inline-block;
-            padding: 2px 12px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 600;
-            font-family: 'Segoe UI', sans-serif;
-            letter-spacing: 0.2px;
-        }
-        .badge-init {
-            background: #1c2333;
-            color: #8b949e;
-        }
-        .badge-add {
-            background: #1c2d24;
-            color: #7ee787;
-        }
-        .badge-sub {
-            background: #2d1b1e;
-            color: #f85149;
-        }
-        .badge-noop {
-            background: #252525;
-            color: #8b949e;
-        }
-        .badge-asr {
-            background: #1c2333;
-            color: #58a6ff;
-        }
-        .badge-asr .arrow {
-            color: #f0883e;
-            margin-left: 4px;
-        }
-
-        /* ── Highlighted bits ── */
-        .highlight-lsb {
-            color: #58a6ff;
-            font-weight: 700;
-        }
-        .highlight-qminus1 {
-            color: #f0883e;
-            font-weight: 700;
-        }
-        .q0qminus1-display {
-            font-weight: 700;
-            letter-spacing: 1px;
-        }
-        .q0qminus1-display .q0 {
-            color: #58a6ff;
-        }
-        .q0qminus1-display .qminus1 {
-            color: #f0883e;
-        }
-
-        .footnote {
-            margin-top: 18px;
-            color: #484f58;
-            font-size: 13px;
-            text-align: center;
-        }
-        .footnote code {
-            background: #1c2128;
-            padding: 2px 10px;
-            border-radius: 6px;
-            color: #8b949e;
-            font-family: 'JetBrains Mono', monospace;
-        }
-
-        /* ── Final expansion ── */
-        .final-expansion {
-            margin-top: 20px;
-            background: #0d1117;
-            border-radius: 14px;
-            padding: 18px 24px;
-            border: 1px solid #30363d;
-            font-family: 'JetBrains Mono', 'Consolas', monospace;
-            color: #e6edf3;
-        }
-        .final-expansion .highlight {
-            color: #58a6ff;
-        }
-        .final-expansion .highlight-green {
-            color: #7ee787;
-        }
-        .final-expansion .highlight-orange {
-            color: #f0883e;
-        }
-        .final-expansion .eq-sign {
-            display: inline-block;
-            width: 1.8em;
-            text-align: right;
-            color: #8b949e;
-            font-weight: 400;
-        }
-        .final-expansion .line-content {
-            display: inline-block;
-        }
-        .final-expansion .result-line {
-            color: #7ee787;
-            font-weight: 600;
-            margin-top: 2px;
-        }
-        .final-expansion .zero-term {
-            color: #e6edf3;
-        }
-        .final-expansion .line-wrapper {
-            padding-left: 105px;
-            line-height: 2.2;
-            font-size: 18px;
-        }
-        .final-expansion .result-line {
-            color: #7ee787;
-            font-weight: 600;
-            margin-top: 2px;
-        }
-
-        @media (max-width: 700px) {
-            .container { padding: 18px 14px; }
-            h1 { font-size: 21px; flex-wrap: wrap; }
-            .input-grid { flex-direction: column; gap: 12px; padding: 16px; }
-            .input-group { flex: 1 1 auto; width: 100%; }
-            .btn-calc { width: 100%; }
-            .result-summary { flex-direction: column; gap: 8px; align-items: flex-start; }
-            table { font-size: 12px; min-width: 700px; }
-            thead th, tbody td { padding: 8px 6px; }
-            .a-stack { font-size: 11px; }
-            .final-expansion .line-wrapper { padding-left: 16px; font-size: 16px; }
-        }
-        @media (max-width: 480px) {
-            table { font-size: 11px; min-width: 520px; }
-            .final-expansion .line-wrapper { padding-left: 8px; font-size: 14px; }
-        }
-        .table-wrap::-webkit-scrollbar {
-            height: 8px;
-        }
-        .table-wrap::-webkit-scrollbar-track {
-            background: #0d1117;
-        }
-        .table-wrap::-webkit-scrollbar-thumb {
-            background: #30363d;
-            border-radius: 6px;
-        }
-        .table-wrap::-webkit-scrollbar-thumb:hover {
-            background: #484f58;
-        }
-    </style>
+    <title>Booth's Algorithm · Compact</title>
+    <link rel="stylesheet" href="style.css" />
 </head>
 <body>
 
-    <div class="container">
-        <h1>⚡ Booth's Algorithm <small>grouped with horizontal lines</small></h1>
-        <div class="subhead">initial values in binary &amp; decimal · operation + shift grouped</div>
+    <div class="container" id="container">
+        <!-- ─── HEADER ─── -->
+        <div class="header">
+            <h1>⚡ Booth's Algorithm <small>compact view</small></h1>
+            <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+                <div class="theme-toggle">
+                    <label for="themeToggle" style="cursor: pointer;">🌙</label>
+                    <input type="checkbox" id="themeToggle" checked />
+                    <label for="themeToggle" style="cursor: pointer;">☀️</label>
+                </div>
+            </div>
+        </div>
+        <div class="subhead">step‑by‑step · paper texture</div>
 
-        <!-- INPUT -->
+        <!-- ─── INPUT ─── -->
         <div class="input-grid">
             <div class="input-group">
                 <label for="multiplicand">Multiplicand (M)</label>
@@ -417,31 +36,39 @@
                 <label for="bitWidth">Bit width (n)</label>
                 <input type="number" id="bitWidth" value="5" min="2" max="16" step="1" />
             </div>
-            <button class="btn-calc" id="calcBtn">⟳ Compute</button>
+            <button class="btn-calc" id="calcBtn">✎ Compute</button>
         </div>
 
         <div class="message" id="message"></div>
 
-        <!-- SUMMARY -->
+        <!-- ─── SUMMARY ─── -->
         <div class="result-summary" id="resultSummary" style="display:none;">
             <div>
-                <div class="label">Multiplicand M</div>
-                <div class="value" id="displayM">—</div>
+                <span class="label">Multiplicand M</span>
+                <span class="value" id="displayM">—</span>
             </div>
             <div>
-                <div class="label">Multiplier Q</div>
-                <div class="value" id="displayQ">—</div>
+                <span class="label">Multiplier Q</span>
+                <span class="value" id="displayQ">—</span>
             </div>
             <div>
-                <div class="label">M'+1</div>
-                <div class="value" id="displayM1">—</div>
+                <span class="label">M'+1</span>
+                <span class="value" id="displayM1">—</span>
             </div>
-            <div style="margin-left:auto; font-size:13px; color:#8b949e;">
+            <div style="margin-left:auto; font-size:13px; color:var(--text-muted); font-family:'Caveat',cursive;">
                 <span id="iterCount"></span> iterations
             </div>
         </div>
 
-        <!-- TABLE -->
+        <!-- ─── TABLE CONTROLS ─── -->
+        <div class="table-controls" id="tableControls" style="display:none;">
+            <div class="toggle-wrapper">
+                <label for="showStepsToggle" style="cursor: pointer;">Show Steps</label>
+                <input type="checkbox" id="showStepsToggle" checked />
+            </div>
+        </div>
+
+        <!-- ─── TABLE ─── -->
         <div class="table-wrap" id="tableWrap" style="display:none;">
             <table>
                 <thead>
@@ -460,389 +87,20 @@
             </table>
         </div>
 
-        <!-- FINAL EXPANSION -->
+        <!-- ─── FINAL EXPANSION ─── -->
         <div id="finalExpansion" style="display:none;" class="final-expansion"></div>
 
-        <div class="footnote"><code>Booth</code> · two's complement · arithmetic shift right (→) · carry shown as "discard 1" in red</div>
+        <!-- ─── RESULT CONTROLS ─── -->
+        <div class="result-controls" id="resultControls" style="display:none;">
+            <div class="toggle-wrapper">
+                <label for="wrapToggle" style="cursor: pointer;">Wrap Text</label>
+                <input type="checkbox" id="wrapToggle" />
+            </div>
+        </div>
+
+        <div class="footnote"><code>Booth</code> · two's complement · ASR (→) · carry → "discard 1"</div>
     </div>
 
-    <script>
-        // ─── Helpers ──────────────────────────────────────────────
-        function toBinary(n, bits) {
-            const mask = (1 << bits) - 1;
-            return (n & mask).toString(2).padStart(bits, '0');
-        }
-
-        function asr(A, Q, Q1, n) {
-            const combined = (A << (n + 1)) | (Q << 1) | Q1;
-            const signBit = (A >> (n - 1)) & 1;
-            let shifted = combined >> 1;
-            if (signBit === 1) {
-                const topMask = ~((1 << (2 * n)) - 1);
-                shifted |= topMask;
-            }
-            const newA = (shifted >> (n + 1)) & ((1 << n) - 1);
-            const newQ = (shifted >> 1) & ((1 << n) - 1);
-            const newQ1 = shifted & 1;
-            return [newA, newQ, newQ1];
-        }
-
-        function highlightQ(qBin, isShift) {
-            if (!isShift) return qBin;
-            const lsb = qBin[qBin.length - 1];
-            const rest = qBin.slice(0, -1);
-            return rest + `<span class="highlight-lsb">${lsb}</span>`;
-        }
-
-        function highlightQminus1(val, isShift) {
-            if (!isShift) return String(val);
-            return `<span class="highlight-qminus1">${val}</span>`;
-        }
-
-        function formatQ0Qminus1(q0, qminus1) {
-            return `<span class="q0qminus1-display"><span class="q0">${q0}</span><span class="qminus1">${qminus1}</span></span>`;
-        }
-
-        // ─── Booth's algorithm ────────────────────────────────────
-        function boothAlgorithmWithSteps(multiplier, multiplicand, n) {
-            const maxVal = (1 << (n - 1)) - 1;
-            const minVal = -(1 << (n - 1));
-            if (multiplier < minVal || multiplier > maxVal ||
-                multiplicand < minVal || multiplicand > maxVal) {
-                throw new Error(`Values must be in range [${minVal}, ${maxVal}] for ${n}-bit two's complement.`);
-            }
-
-            const mask = (1 << n) - 1;
-            const M = multiplicand & mask;
-            const Q = multiplier & mask;
-            const M1 = ((~M) + 1) & mask;
-
-            let A = 0;
-            let Qreg = Q;
-            let Qminus1 = 0;
-            let count = n;
-            const rows = [];
-
-            // Init row
-            rows.push({
-                type: 'init',
-                aDisplay: toBinary(A, n),
-                qBin: toBinary(Qreg, n),
-                qMinus1: Qminus1,
-                q0: Qreg & 1,
-                mBin: toBinary(M, n),
-                m1Bin: toBinary(M1, n),
-                count: count,
-                remark: 'Initialization',
-                badgeClass: 'badge-init',
-                isGroupEnd: true
-            });
-
-            while (count > 0) {
-                const Q0 = Qreg & 1;
-                let opType = 'noop';
-                let remark = '';
-                let badgeClass = 'badge-noop';
-                let aBefore = A;
-                let aOperand = 0;
-                let aResult = A;
-                let carry = false;
-                let opSymbol = '';
-
-                if (Q0 === 0 && Qminus1 === 1) {
-                    const sum = A + M;
-                    aOperand = M;
-                    aResult = sum & mask;
-                    carry = (sum & ~mask) !== 0;
-                    opType = 'add';
-                    remark = 'A ← A + M  (Q₀Q₋₁ = 01)';
-                    badgeClass = 'badge-add';
-                    opSymbol = '+';
-                    A = aResult;
-                } else if (Q0 === 1 && Qminus1 === 0) {
-                    const sum = A + M1;
-                    aOperand = M1;
-                    aResult = sum & mask;
-                    carry = (sum & ~mask) !== 0;
-                    opType = 'sub';
-                    remark = 'A ← A − M  (Q₀Q₋₁ = 10)';
-                    badgeClass = 'badge-sub';
-                    opSymbol = '−';
-                    A = aResult;
-                } else {
-                    opType = 'noop';
-                    remark = 'No operation (Q₀Q₋₁ = 00 or 11)';
-                    badgeClass = 'badge-noop';
-                    opSymbol = '—';
-                    aResult = A;
-                    carry = false;
-                }
-
-                let aDisplayLines = [];
-                if (opType === 'add' || opType === 'sub') {
-                    const aBeforeStr = toBinary(aBefore, n);
-                    const aOperandStr = toBinary(aOperand, n);
-                    const aResultStr = toBinary(aResult, n);
-                    const fullSum = aBefore + aOperand;
-                    const fullSumStr = fullSum.toString(2).padStart(n + 1, '0');
-                    aDisplayLines.push(`  ${aBeforeStr}`);
-                    aDisplayLines.push(`${opSymbol} ${aOperandStr}`);
-                    aDisplayLines.push(`───────`);
-                    if (carry) {
-                        aDisplayLines.push(`= ${fullSumStr}`);
-                        aDisplayLines.push(`  <span class="discard">discard 1</span>`);
-                        aDisplayLines.push(`  <span class="result">${aResultStr}</span>`);
-                    } else {
-                        aDisplayLines.push(`= <span class="result">${fullSumStr}</span>`);
-                    }
-                } else {
-                    aDisplayLines.push(`  ${toBinary(aBefore, n)}`);
-                    aDisplayLines.push(`  (unchanged)`);
-                }
-
-                rows.push({
-                    type: 'operation',
-                    aDisplayLines: aDisplayLines,
-                    qBin: toBinary(Qreg, n),
-                    qMinus1: Qminus1,
-                    q0: Q0,
-                    mBin: '-',
-                    m1Bin: '-',
-                    count: '-',
-                    remark: remark,
-                    badgeClass: badgeClass,
-                    isGroupEnd: false
-                });
-
-                const [newA, newQ, newQminus1] = asr(A, Qreg, Qminus1, n);
-                A = newA;
-                Qreg = newQ;
-                Qminus1 = newQminus1;
-                count--;
-
-                rows.push({
-                    type: 'shift',
-                    aDisplay: toBinary(A, n),
-                    qBin: toBinary(Qreg, n),
-                    qMinus1: Qminus1,
-                    q0: Qreg & 1,
-                    mBin: '-',
-                    m1Bin: '-',
-                    count: count,
-                    remark: 'Arithmetic Shift Right →',
-                    badgeClass: 'badge-asr',
-                    isGroupEnd: true
-                });
-            }
-
-            return rows;
-        }
-
-        // ─── DOM ──────────────────────────────────────────────────
-        const multiplicandInput = document.getElementById('multiplicand');
-        const multiplierInput = document.getElementById('multiplier');
-        const bitWidthInput = document.getElementById('bitWidth');
-        const calcBtn = document.getElementById('calcBtn');
-        const messageEl = document.getElementById('message');
-        const resultSummary = document.getElementById('resultSummary');
-        const displayM = document.getElementById('displayM');
-        const displayQ = document.getElementById('displayQ');
-        const displayM1 = document.getElementById('displayM1');
-        const iterCount = document.getElementById('iterCount');
-        const tableWrap = document.getElementById('tableWrap');
-        const tableBody = document.getElementById('tableBody');
-        const finalExpansion = document.getElementById('finalExpansion');
-
-        function showMessage(text, type) {
-            messageEl.textContent = text;
-            messageEl.className = 'message ' + type;
-        }
-        function hideMessage() {
-            messageEl.className = 'message';
-            messageEl.textContent = '';
-        }
-
-        function compute() {
-            hideMessage();
-            resultSummary.style.display = 'none';
-            tableWrap.style.display = 'none';
-            finalExpansion.style.display = 'none';
-
-            const multiplicand = parseInt(multiplicandInput.value);
-            const multiplier = parseInt(multiplierInput.value);
-            const n = parseInt(bitWidthInput.value);
-
-            if (isNaN(multiplicand) || isNaN(multiplier) || isNaN(n)) {
-                showMessage('Please enter valid numbers.', 'error');
-                return;
-            }
-            if (n < 2 || n > 16) {
-                showMessage('Bit width must be between 2 and 16.', 'error');
-                return;
-            }
-            const maxVal = (1 << (n - 1)) - 1;
-            const minVal = -(1 << (n - 1));
-            if (multiplicand < minVal || multiplicand > maxVal) {
-                showMessage(`Multiplicand must be in [${minVal}, ${maxVal}] for ${n}-bit two's complement.`, 'error');
-                return;
-            }
-            if (multiplier < minVal || multiplier > maxVal) {
-                showMessage(`Multiplier must be in [${minVal}, ${maxVal}] for ${n}-bit two's complement.`, 'error');
-                return;
-            }
-
-            try {
-                const rows = boothAlgorithmWithSteps(multiplier, multiplicand, n);
-
-                const M_val = multiplicand & ((1 << n) - 1);
-                const M1_val = ((~M_val) + 1) & ((1 << n) - 1);
-                displayM.textContent = toBinary(M_val, n) + ' (' + multiplicand + ')';
-                displayQ.textContent = toBinary(multiplier & ((1 << n) - 1), n) + ' (' + multiplier + ')';
-                displayM1.textContent = toBinary(M1_val, n) + ' (' + (-multiplicand) + ')';
-                const shiftRows = rows.filter(r => r.type === 'shift');
-                iterCount.textContent = shiftRows.length;
-                resultSummary.style.display = 'flex';
-
-                // ── Render table ──
-                tableBody.innerHTML = '';
-                rows.forEach((row, index) => {
-                    const tr = document.createElement('tr');
-                    if (row.type === 'operation') tr.className = 'operation-row';
-                    else if (row.type === 'shift') tr.className = 'shift-row';
-                    if (row.isGroupEnd && index < rows.length - 1) tr.classList.add('group-end');
-
-                    const tdA = document.createElement('td');
-                    if (row.type === 'operation') {
-                        const stack = document.createElement('div');
-                        stack.className = 'a-stack';
-                        row.aDisplayLines.forEach(line => {
-                            const span = document.createElement('span');
-                            span.className = 'line';
-                            if (line.includes('<span')) {
-                                span.innerHTML = line;
-                            } else {
-                                span.textContent = line;
-                                if (line.includes('+') || line.includes('−')) span.classList.add('op-symbol');
-                                else if (line.includes('────')) span.classList.add('dash');
-                            }
-                            stack.appendChild(span);
-                        });
-                        tdA.appendChild(stack);
-                    } else {
-                        tdA.textContent = row.aDisplay;
-                    }
-                    tr.appendChild(tdA);
-
-                    const tdQ = document.createElement('td');
-                    const isShift = (row.type === 'shift');
-                    tdQ.innerHTML = highlightQ(row.qBin, isShift);
-                    tr.appendChild(tdQ);
-
-                    const tdQminus1 = document.createElement('td');
-                    tdQminus1.innerHTML = highlightQminus1(row.qMinus1, isShift);
-                    tr.appendChild(tdQminus1);
-
-                    const tdM = document.createElement('td');
-                    tdM.textContent = row.mBin;
-                    tr.appendChild(tdM);
-
-                    const tdM1 = document.createElement('td');
-                    tdM1.textContent = row.m1Bin;
-                    tr.appendChild(tdM1);
-
-                    const tdQ0Qminus1 = document.createElement('td');
-                    tdQ0Qminus1.innerHTML = formatQ0Qminus1(row.q0, row.qMinus1);
-                    tr.appendChild(tdQ0Qminus1);
-
-                    const tdCount = document.createElement('td');
-                    tdCount.textContent = row.count;
-                    tr.appendChild(tdCount);
-
-                    const tdRemark = document.createElement('td');
-                    const badge = document.createElement('span');
-                    badge.className = 'badge ' + row.badgeClass;
-                    if (row.type === 'shift') badge.innerHTML = row.remark;
-                    else badge.textContent = row.remark;
-                    tdRemark.appendChild(badge);
-                    tr.appendChild(tdRemark);
-
-                    tableBody.appendChild(tr);
-                });
-                tableWrap.style.display = 'block';
-
-                // ── Final expansion ──
-                const lastShift = [...rows].reverse().find(r => r.type === 'shift');
-                const lastRow = lastShift || rows[rows.length - 1];
-                const A_bin = lastRow.aDisplay || '0';
-                const Q_bin = lastRow.qBin;
-                const AQ_bin = A_bin + ' ' + Q_bin;
-                const combined = A_bin + Q_bin;
-                const len = combined.length;
-
-                let powerTerms = [];
-                let numericTerms = [];
-                let total = 0;
-
-                for (let i = 0; i < len; i++) {
-                    const pos = len - 1 - i;
-                    const weight = (i === 0) ? -Math.pow(2, pos) : Math.pow(2, pos);
-                    const bit = combined[i];
-                    if (bit === '1') {
-                        const powerStr = (i === 0) ? `-2<sup>${pos}</sup>` : `+2<sup>${pos}</sup>`;
-                        const powerClass = (i === 0) ? 'highlight-orange' : 'highlight';
-                        const numValue = (i === 0) ? -Math.pow(2, pos) : Math.pow(2, pos);
-                        const numStr = (i === 0) ? `${numValue}` : `+${numValue}`;
-                        const numClass = (i === 0) ? 'highlight-orange' : 'highlight';
-                        powerTerms.push(`<span class="${powerClass}">${powerStr}</span>`);
-                        numericTerms.push(`<span class="${numClass}">${numStr}</span>`);
-                        total += (i === 0 ? -Math.pow(2, pos) : Math.pow(2, pos));
-                    } else {
-                        const powerStr = (i === 0) ? `0·2<sup>${pos}</sup>` : `+0·2<sup>${pos}</sup>`;
-                        const numStr = (i === 0) ? '0' : '+0';
-                        powerTerms.push(`<span class="zero-term">${powerStr}</span>`);
-                        numericTerms.push(`<span class="zero-term">${numStr}</span>`);
-                    }
-                }
-
-                let powerLine = powerTerms.join(' ');
-                if (len > 0 && combined[0] === '0') {
-                    powerLine = powerLine.replace(/^\+0·2<sup>\d+<\/sup> /, '');
-                }
-                let numericLine = numericTerms.join(' ');
-                if (len > 0 && combined[0] === '0') {
-                    numericLine = numericLine.replace(/^\+0 /, '');
-                }
-
-                finalExpansion.innerHTML = `
-                    <div style="font-weight:600; margin-bottom:8px; font-size:18px;">
-                        Result in AQ = <span class="highlight">${AQ_bin}</span>
-                    </div>
-                    <div class="line-wrapper">
-                        <span class="eq-sign">=</span> <span class="line-content">${powerLine}</span>
-                    </div>
-                    <div class="line-wrapper">
-                        <span class="eq-sign">=</span> <span class="line-content">${numericLine}</span>
-                    </div>
-                    <div class="line-wrapper result-line">
-                        <span class="eq-sign">=</span> <span class="highlight-green">${total}</span>
-                    </div>
-                `;
-                finalExpansion.style.display = 'block';
-
-                setTimeout(() => {
-                    finalExpansion.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                }, 100);
-
-            } catch (err) {
-                showMessage(err.message, 'error');
-            }
-        }
-
-        calcBtn.addEventListener('click', compute);
-        [multiplicandInput, multiplierInput, bitWidthInput].forEach(inp => {
-            inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') compute(); });
-        });
-        window.addEventListener('DOMContentLoaded', compute);
-    </script>
+    <script src="script.js"></script>
 </body>
 </html>
