@@ -118,7 +118,7 @@ function boothAlgorithmWithSteps(multiplier, multiplicand, n) {
             const fullSum = aBefore + aOperand;
             const fullSumStr = fullSum.toString(2).padStart(n + 1, '0');
             aDisplayLines.push(`  ${aBeforeStr}`);
-            aDisplayLines.push(`${opSymbol} ${aOperandStr}`);
+            aDisplayLines.push(`+ ${aOperandStr}`);
             aDisplayLines.push(`───────`);
             if (carry) {
                 aDisplayLines.push(`= ${fullSumStr}`);
