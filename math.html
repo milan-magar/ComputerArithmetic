@@ -10,13 +10,6 @@
 <script src="https://cdn.plot.ly/plotly-2.30.0.min.js" charset="utf-8"></script>
 
 <style type="text/tailwindcss">
-  .preset {
-    @apply px-3 py-1.5 rounded-full text-xs font-medium bg-slate-800/70 hover:bg-slate-700
-           border border-slate-700 text-slate-300 transition select-none;
-  }
-  .preset.active {
-    @apply bg-sky-500/20 border-sky-500/50 text-sky-300;
-  }
   .badge {
     @apply inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold border;
   }
@@ -26,9 +19,14 @@
   .field-label {
     @apply block text-[10px] font-semibold uppercase tracking-widest text-slate-500 mb-1.5;
   }
-  .num-input {
-    @apply w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm font-mono text-slate-200
-           outline-none focus:border-sky-500 transition;
+  .stat-box {
+    @apply bg-slate-950/70 border border-slate-800 rounded-xl px-3 py-2;
+  }
+  .stat-label {
+    @apply text-[10px] uppercase tracking-widest text-slate-500;
+  }
+  .stat-value {
+    @apply font-mono text-base text-white leading-tight;
   }
 </style>
 
@@ -85,9 +83,40 @@
     border-color: color-mix(in srgb, var(--c) 55%, #334155);
   }
 
+  /* Sidebar becomes independently scrollable on large screens */
   @media (min-width: 1024px) {
-    .sidebar-sticky { position: sticky; top: 1.25rem; }
+    .sidebar-scroll {
+      max-height: calc(100vh - 2.5rem);
+      overflow-y: auto;
+      padding-right: 4px;
+    }
   }
+
+  @keyframes pulse-border {
+    0%   { box-shadow: 0 0 0 0   rgba(77,159,255,0.0); }
+    40%  { box-shadow: 0 0 0 3px rgba(77,159,255,0.35); }
+    100% { box-shadow: 0 0 0 0   rgba(77,159,255,0.0); }
+  }
+  .resampling { animation: pulse-border .55s ease-out; }
+
+  .graph-btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 6px 11px;
+    font-size: 11px; font-weight: 600; letter-spacing: .02em;
+    background: rgba(15,23,42,0.85);
+    border: 1px solid rgba(51,65,85,0.9);
+    color: #cbd5e1;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background .15s, border-color .15s, color .15s;
+    backdrop-filter: blur(6px);
+  }
+  .graph-btn:hover {
+    background: rgba(30,41,59,0.95);
+    border-color: #38bdf8;
+    color: #f1f5f9;
+  }
+  .graph-btn:active { transform: translateY(1px); }
 </style>
 </head>
 
@@ -100,18 +129,20 @@
         Calculus <span class="text-sky-400">Visualizer</span>
       </h1>
       <p class="text-sm text-slate-400 mt-1">
-        Overlay ƒ(x), ƒ′(x) and ƒ″(x) on one graph — toggle curves and inspect any point live.
+        Overlay ƒ(x), ƒ′(x) and ƒ″(x) — <span class="text-slate-300">pan &amp; zoom freely</span>.
       </p>
     </div>
     <div id="expr-display"
          class="font-mono text-[11px] leading-relaxed text-slate-400 bg-slate-900/80 border border-slate-800 rounded-xl px-3 py-2"></div>
   </header>
 
-  <div class="grid grid-cols-1 lg:grid-cols-[380px_minmax(0,1fr)] gap-5">
+  <div class="grid grid-cols-1 lg:grid-cols-[400px_minmax(0,1fr)] gap-5">
 
-    <!-- ── LEFT: Controls ──────────────────────────────────── -->
-    <aside class="lg:max-h-[calc(100vh-2.5rem)] lg:overflow-y-auto lg:pr-1">
-      <div class="sidebar-sticky">
+    <!-- ── LEFT: Controls + ƒ(x) analysis ──────────────────── -->
+    <aside class="sidebar-scroll">
+      <div class="space-y-5">
+
+        <!-- Controls -->
         <section class="panel p-4 sm:p-5 space-y-5">
 
           <div>
@@ -130,37 +161,17 @@
           </div>
 
           <div>
-            <span class="field-label">Presets</span>
-            <div class="flex flex-wrap gap-2">
-              <button class="preset" data-expr="x^3 - 3*x">Polynomial</button>
-              <button class="preset" data-expr="3*sin(x)">Sine wave</button>
-              <button class="preset" data-expr="exp(x/3)">Exponential</button>
-              <button class="preset" data-expr="1/(x^2+1)">Bell curve</button>
-              <button class="preset" data-expr="x^4 - 4*x^2 + x">Quartic</button>
-              <button class="preset" data-expr="log(x^2+1)">Logarithmic</button>
+            <label class="field-label">Inspect point · x = c</label>
+            <div class="flex items-center gap-3 mb-2">
+              <input id="c-input" type="number" step="0.1" value="1"
+                     class="w-28 bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm font-mono
+                            text-amber-300 outline-none focus:border-sky-500 transition" />
+              <span id="c-hint" class="text-[11px] text-slate-500 font-mono">slider below</span>
             </div>
-          </div>
-
-          <div>
-            <span class="field-label">Range</span>
-            <div class="grid grid-cols-2 gap-3">
-              <div>
-                <label for="xmin" class="block text-[10px] text-slate-500 mb-1">x min</label>
-                <input id="xmin" type="number" step="0.5" value="-5" class="num-input" />
-              </div>
-              <div>
-                <label for="xmax" class="block text-[10px] text-slate-500 mb-1">x max</label>
-                <input id="xmax" type="number" step="0.5" value="5" class="num-input" />
-              </div>
-            </div>
-          </div>
-
-          <div>
-            <label class="flex items-center justify-between field-label mb-1.5">
-              <span>Resolution</span>
-              <span id="res-val" class="font-mono text-sky-400 normal-case tracking-normal">1200 pts</span>
-            </label>
-            <input id="res" type="range" min="200" max="8000" step="100" value="1200" />
+            <input id="c-slider" type="range" min="-20" max="20" step="0.001" value="1" />
+            <p class="text-[11px] text-slate-500 mt-1.5">
+              Drag the slider, type a value, or click anywhere on the graph.
+            </p>
           </div>
 
           <div>
@@ -200,30 +211,35 @@
             </div>
           </div>
 
-          <div>
-            <label class="flex items-center justify-between field-label mb-2">
-              <span>Inspect point · x = c</span>
-              <span id="c-val" class="font-mono text-amber-400 normal-case tracking-normal">1.000</span>
-            </label>
-            <input id="c-slider" type="range" min="-5" max="5" step="0.001" value="1" />
-            <p class="text-[11px] text-slate-500 mt-1.5">
-              Drag the slider — or click on the graph — to move the inspection point.
-            </p>
-          </div>
-
         </section>
+
+        <!-- ƒ(x) analysis card -->
+        <section id="analysis"></section>
+
       </div>
     </aside>
 
-    <!-- ── RIGHT: Graph + Analysis ─────────────────────────── -->
-    <main class="space-y-5 min-w-0">
+    <!-- ── RIGHT: Graph only ───────────────────────────────── -->
+    <main class="min-w-0">
+      <section class="panel p-2 sm:p-3 relative">
+        <div class="absolute top-4 left-5 z-10 flex gap-2">
+          <button id="reset-view-btn" class="graph-btn" title="Reset view to x, y ∈ [−20, 20]">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"
+                 stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 12a9 9 0 1 0 3-6.7L3 8"></path>
+              <path d="M3 3v5h5"></path>
+            </svg>
+            Reset view
+          </button>
+        </div>
 
-      <section class="panel p-2 sm:p-3">
-        <div id="plot" style="height:620px;"></div>
+        <div class="absolute top-4 right-5 z-10 text-[10px] uppercase tracking-widest text-slate-500 pointer-events-none text-right leading-relaxed">
+          <div>x, y ∈ [−20, 20]</div>
+          <div class="text-slate-600">scroll · drag · double-click</div>
+        </div>
+
+        <div id="plot" style="height:820px;"></div>
       </section>
-
-      <section id="analysis" class="grid gap-4 md:grid-cols-3"></section>
-
     </main>
   </div>
 
@@ -236,17 +252,14 @@
 (() => {
   'use strict';
 
-  /* ══════════════════════════════════════════════════════════
-     Desmos-inspired palette (brightened for dark bg)
-     ══════════════════════════════════════════════════════════ */
   const COL = {
-    f:    '#4d9fff',   // Desmos blue
-    d1:   '#ff5757',   // Desmos red
-    d2:   '#5fd45f',   // Desmos green
-    accent: '#ffb84d', // Desmos orange
+    f:    '#4d9fff',
+    d1:   '#ff5757',
+    d2:   '#5fd45f',
+    accent: '#ffb84d',
     max:  '#ff5757',
     min:  '#5fd45f',
-    infl: '#b57fff'    // Desmos purple
+    infl: '#b57fff'
   };
 
   const B = {
@@ -276,41 +289,50 @@
     structural: [IX.maxima, IX.minima, IX.infl]
   };
 
+  const INITIAL_MIN = -20;
+  const INITIAL_MAX =  20;
+  const FIXED_RES = 2000;
+
   const els = {
     fnInput:   document.getElementById('fn-input'),
     plotBtn:   document.getElementById('plot-btn'),
     error:     document.getElementById('error'),
-    xmin:      document.getElementById('xmin'),
-    xmax:      document.getElementById('xmax'),
-    res:       document.getElementById('res'),
-    resVal:    document.getElementById('res-val'),
+    cInput:    document.getElementById('c-input'),
     cSlider:   document.getElementById('c-slider'),
-    cVal:      document.getElementById('c-val'),
+    cHint:     document.getElementById('c-hint'),
     plot:      document.getElementById('plot'),
     analysis:  document.getElementById('analysis'),
     exprDisp:  document.getElementById('expr-display'),
     allOn:     document.getElementById('all-on'),
-    allOff:    document.getElementById('all-off')
+    allOff:    document.getElementById('all-off'),
+    resetBtn:  document.getElementById('reset-view-btn')
   };
 
   const S = {
     expr: 'x^3 - 3*x',
-    xmin: -5, xmax: 5, n: 1200, c: 1,
+    xmin: INITIAL_MIN, xmax: INITIAL_MAX,
+    n: FIXED_RES,
+    c: 1,
     F: null, F1: null, F2: null, F3: null,
     str: { f: '', f1: '', f2: '', f3: '' },
     xs: [], y0: [], y1: [], y2: [],
     roots1: [], roots2: []
   };
 
+  let lastSampledRange = [NaN, NaN];
+
   const CONFIG = {
     responsive: true,
     displaylogo: false,
     scrollZoom: true,
+    doubleClick: 'reset+autosize',
     modeBarButtonsToRemove: ['lasso2d', 'select2d', 'autoScale2d', 'toggleSpikelines']
   };
 
   let plotReady = false;
   let cRaf = null;
+  let resampleTimer = null;
+  let relayoutLock = false;
 
   /* ══════════════════════════════════════════════════════════
      Helpers
@@ -376,70 +398,26 @@
   }
 
   /* ══════════════════════════════════════════════════════════
-     Sampling — continuous & smooth
-     ══════════════════════════════════════════════════════════
-     Strategy for "continuous Desmos-like" curves:
-      1. Very high uniform sampling density (default 1200 pts).
-      2. Keep all finite values — no artificial capping.
-      3. Only insert a break (null) where there is a genuine
-         discontinuity, i.e. an enormous jump relative to the
-         local scale.  This yields continuous smooth curves for
-         well-behaved functions, and clean gaps at asymptotes.
-  ══════════════════════════════════════════════════════════ */
-
-  function smoothSeries(xs, ys) {
-    const n = xs.length;
-
-    // collect finite values to gauge central scale
-    const finite = [];
-    for (let i = 0; i < n; i++) if (isFinite(ys[i])) finite.push(ys[i]);
-    if (finite.length < 4) return ys;
-
-    const sorted = finite.slice().sort((a, b) => a - b);
-    const p05 = sorted[Math.floor(sorted.length * 0.05)];
-    const p95 = sorted[Math.floor(sorted.length * 0.95)];
-    let spread = p95 - p05;
-    if (!(spread > 0)) spread = Math.max(1, Math.abs(sorted[sorted.length - 1] - sorted[0]));
-
-    // absolute jump threshold — anything bigger than this is a real discontinuity
-    const JUMP = spread * 8;
-    // also flag if slope between neighbours is astronomically larger than typical
-    const slopeLimit = spread / Math.max(1e-9, (xs[1] - xs[0])) * 200;
-
-    const out = new Array(n);
-    for (let i = 0; i < n; i++) {
-      const y = ys[i];
-      if (!isFinite(y)) { out[i] = null; continue; }
-
-      // check jump vs previous finite neighbour
-      let broken = false;
-      for (let j = i - 1; j >= 0; j--) {
-        if (out[j] === null) break;
-        if (!isFinite(ys[j])) break;
-        const dy = Math.abs(y - ys[j]);
-        const dx = Math.abs(xs[i] - xs[j]) || 1e-12;
-        if (dy > JUMP || dy / dx > slopeLimit) { broken = true; }
-        break; // only immediate neighbour
-      }
-
-      out[i] = broken ? null : y;
+     Sampling
+     ══════════════════════════════════════════════════════════ */
+  function capSeries(ys) {
+    const vals = [];
+    for (let i = 0; i < ys.length; i++) {
+      const v = ys[i];
+      if (isFinite(v)) vals.push(Math.abs(v));
     }
+    if (!vals.length) return ys.map(v => isFinite(v) ? v : null);
 
-    // Also null the immediately preceding point when a jump is detected
-    // so the plot doesn't draw a near-vertical connecting segment.
-    for (let i = 1; i < n; i++) {
-      if (out[i] === null && out[i - 1] !== null && ys[i - 1] !== null) {
-        // only null previous if the jump was genuine
-        const dy = Math.abs(ys[i] - ys[i - 1]);
-        if (dy > JUMP) out[i - 1] = null;
-      }
-    }
+    vals.sort((a, b) => a - b);
+    const p95 = vals[Math.floor(vals.length * 0.95)];
+    if (!(p95 > 0)) return ys.map(v => isFinite(v) ? v : null);
 
-    return out;
+    const cap = p95 * 20;
+    return ys.map(v => (isFinite(v) && Math.abs(v) <= cap) ? v : null);
   }
 
   function sample() {
-    const n = Math.max(50, S.n | 0);
+    const n = S.n;
     const span = S.xmax - S.xmin;
     const step = span / (n - 1);
 
@@ -457,9 +435,9 @@
     }
 
     S.xs = xs;
-    S.y0 = smoothSeries(xs, y0);
-    S.y1 = smoothSeries(xs, y1);
-    S.y2 = smoothSeries(xs, y2);
+    S.y0 = capSeries(y0);
+    S.y1 = capSeries(y1);
+    S.y2 = capSeries(y2);
   }
 
   /* ══════════════════════════════════════════════════════════
@@ -526,9 +504,9 @@
   }
 
   /* ══════════════════════════════════════════════════════════
-     Desmos-style layout
+     Desmos-style axis (fixed initial ranges)
      ══════════════════════════════════════════════════════════ */
-  function mkAxis(title, color, spikes, showTicks) {
+  function mkAxis(title, color, spikes) {
     const a = {
       color: '#94a3b8',
       tickfont: { size: 11, color: '#94a3b8', family: 'ui-sans-serif, system-ui' },
@@ -554,7 +532,6 @@
       a.spikethickness = 1;
       a.spikedash = 'dot';
     }
-    if (showTicks === false) a.showticklabels = false;
     return a;
   }
 
@@ -568,7 +545,7 @@
     }];
   }
 
-  function makeLayout(shapes) {
+  function makeLayout(shapes, xRange) {
     return {
       showlegend: false,
       margin: { l: 56, r: 24, t: 18, b: 40 },
@@ -582,17 +559,24 @@
         font: { color: '#e2e8f0', size: 11, family: 'ui-monospace, monospace' }
       },
       dragmode: 'pan',
-      xaxis:  mkAxis('x', '#94a3b8', true),
-      yaxis:  mkAxis('y', '#94a3b8', false),
+      xaxis: Object.assign(mkAxis('x', '#94a3b8', true), {
+        range: xRange,
+        autorange: false,
+        fixedrange: false
+      }),
+      yaxis: Object.assign(mkAxis('y', '#94a3b8', false), {
+        range: [INITIAL_MIN, INITIAL_MAX],
+        autorange: false,
+        fixedrange: false
+      }),
       shapes: shapes || []
     };
   }
 
-  /* Desmos-style line config: smooth & continuous */
   const LINE_BASE = {
-    shape: 'linear',   // high-res + linear = smooth & continuous (no spline overshoot)
+    shape: 'linear',
     width: 2.6,
-    simplify: false    // keep every sampled point — prevents Plotly from discarding detail
+    simplify: false
   };
 
   function buildTraces() {
@@ -707,33 +691,130 @@
   }
 
   /* ══════════════════════════════════════════════════════════
-     Render
+     Live view tracking
+     ══════════════════════════════════════════════════════════ */
+  function currentXRange() {
+    const full = els.plot && els.plot._fullLayout;
+    if (full && full.xaxis && full.xaxis.range && full.xaxis.range.length === 2) {
+      const a = full.xaxis.range[0], b = full.xaxis.range[1];
+      if (isFinite(a) && isFinite(b) && b > a) return [a, b];
+    }
+    return null;
+  }
+
+  function resampleView() {
+    if (!plotReady) return;
+    const range = currentXRange();
+    if (!range) return;
+
+    const [a, b] = range;
+    const span = lastSampledRange[1] - lastSampledRange[0];
+    if (isFinite(span) && span > 0) {
+      const d = Math.abs(a - lastSampledRange[0]) + Math.abs(b - lastSampledRange[1]);
+      if (d / span < 0.0015) return;
+    }
+
+    S.xmin = a;
+    S.xmax = b;
+    lastSampledRange = [a, b];
+
+    sample();
+    S.roots1 = findRoots(S.F1);
+    S.roots2 = findRoots(S.F2);
+
+    const data = buildTraces();
+    const indices = [0,1,2,3,4,5,6,7,8,9];
+
+    relayoutLock = true;
+    Plotly.restyle(els.plot, {
+      x: data.map(d => d.x),
+      y: data.map(d => d.y)
+    }, indices).then(() => {
+      relayoutLock = false;
+    }).catch(() => { relayoutLock = false; });
+
+    updatePanel();
+
+    const card = els.plot.parentElement;
+    if (card) {
+      card.classList.remove('resampling');
+      void card.offsetWidth;
+      card.classList.add('resampling');
+    }
+  }
+
+  function scheduleResample() {
+    if (resampleTimer) clearTimeout(resampleTimer);
+    resampleTimer = setTimeout(resampleView, 70);
+  }
+
+  function onRelayout(ev) {
+    if (relayoutLock) return;
+    if (!ev) return;
+    if (('xaxis.range[0]' in ev) || ('xaxis.range[1]' in ev) || (ev['xaxis.autorange'] === true)) {
+      scheduleResample();
+    }
+  }
+
+  /* ══════════════════════════════════════════════════════════
+     Full render
      ══════════════════════════════════════════════════════════ */
   async function fullRender() {
     if (!parseAndBuild()) return;
 
-    readRange();
-    syncSliderBounds();
-    sample();
+    S.xmin = INITIAL_MIN;
+    S.xmax = INITIAL_MAX;
+    lastSampledRange = [S.xmin, S.xmax];
 
+    sample();
     S.roots1 = findRoots(S.F1);
     S.roots2 = findRoots(S.F2);
-
     updateExprDisplay();
 
     const data = buildTraces();
-    const layout = makeLayout(vlines(S.c));
+    const layout = makeLayout(vlines(S.c), [S.xmin, S.xmax]);
 
     if (!plotReady) {
       await Plotly.newPlot(els.plot, data, layout, CONFIG);
       plotReady = true;
       els.plot.on('plotly_click', onPlotClick);
+      els.plot.on('plotly_relayout', onRelayout);
     } else {
+      relayoutLock = true;
       await Plotly.react(els.plot, data, layout, CONFIG);
+      relayoutLock = false;
     }
 
     applyVisibility();
     updatePanel();
+  }
+
+  async function resetView() {
+    if (!plotReady) return;
+    S.xmin = INITIAL_MIN;
+    S.xmax = INITIAL_MAX;
+    lastSampledRange = [S.xmin, S.xmax];
+
+    sample();
+    S.roots1 = findRoots(S.F1);
+    S.roots2 = findRoots(S.F2);
+
+    const data = buildTraces();
+    const layout = makeLayout(vlines(S.c), [S.xmin, S.xmax]);
+
+    relayoutLock = true;
+    await Plotly.react(els.plot, data, layout, CONFIG);
+    relayoutLock = false;
+
+    applyVisibility();
+    updatePanel();
+
+    const card = els.plot.parentElement;
+    if (card) {
+      card.classList.remove('resampling');
+      void card.offsetWidth;
+      card.classList.add('resampling');
+    }
   }
 
   function updateC() {
@@ -748,12 +829,13 @@
     const tx = [c - half, c + half];
     const ty = tx.map(x => fc + d1c * (x - c));
 
+    relayoutLock = true;
     Plotly.update(
       els.plot,
       { x: [tx, [c], [c], [c]], y: [ty, [fc], [d1c], [d2c]] },
       { shapes: vlines(c) },
       [IX.tangent, IX.pF, IX.pD1, IX.pD2]
-    );
+    ).then(() => { relayoutLock = false; }).catch(() => { relayoutLock = false; });
 
     updatePanel();
   }
@@ -771,111 +853,100 @@
   }
 
   /* ══════════════════════════════════════════════════════════
-     Analysis panel
+     Analysis — single card for ƒ(x), rendered in the sidebar
      ══════════════════════════════════════════════════════════ */
-  function statCard(o) {
-    return `
-      <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-4 space-y-3">
-        <div class="flex items-center justify-between">
-          <h3 class="font-mono text-sm font-bold" style="color:${o.color}">${o.title}</h3>
-          <span class="text-[10px] uppercase tracking-widest text-slate-500">at x = c</span>
-        </div>
-        <div class="grid grid-cols-2 gap-2">
-          <div class="bg-slate-950/70 border border-slate-800 rounded-xl px-3 py-2">
-            <div class="text-[10px] uppercase tracking-widest text-slate-500">Value</div>
-            <div class="font-mono text-lg text-white leading-tight">${o.value}</div>
-          </div>
-          <div class="bg-slate-950/70 border border-slate-800 rounded-xl px-3 py-2">
-            <div class="text-[10px] uppercase tracking-widest text-slate-500">${o.slopeLabel}</div>
-            <div class="font-mono text-lg text-white leading-tight">${o.slope}</div>
-          </div>
-        </div>
-        <div class="flex flex-wrap gap-1.5">
-          ${o.badges.map(b => `<span class="badge ${b.cls}">${b.text}</span>`).join('')}
-        </div>
-        <p class="text-[11px] text-slate-400 leading-relaxed font-mono">${o.note}</p>
-      </div>`;
-  }
-
   function updatePanel() {
     const c = S.c;
     const f  = ev(S.F,  c);
     const d1 = ev(S.F1, c);
     const d2 = ev(S.F2, c);
-    const d3 = ev(S.F3, c);
 
     let fState, fConc;
+
     if (!isFinite(d1))   fState = { text: '· undefined', cls: B.neutral };
     else if (d1 > EPS)   fState = { text: '▲ Increasing', cls: B.up };
     else if (d1 < -EPS)  fState = { text: '▼ Decreasing', cls: B.down };
     else                 fState = { text: '● Stationary', cls: B.flat };
 
     if (!isFinite(d2))   fConc = { text: '· concavity n/a', cls: B.neutral };
-    else if (d2 > EPS)   fConc = { text: '∪ Concave Up', cls: B.up };
-    else if (d2 < -EPS)  fConc = { text: '∩ Concave Down', cls: B.down };
+    else if (d2 > EPS)   fConc = { text: '∪ Concave Upward', cls: B.up };
+    else if (d2 < -EPS)  fConc = { text: '∩ Concave Downward', cls: B.down };
     else                 fConc = { text: '◆ Inflection Point', cls: B.violet };
 
-    const noteF = (isFinite(f) && isFinite(d1))
-      ? `Tangent: y = ${fmt(f)} ${d1 < 0 ? '−' : '+'} ${fmt(Math.abs(d1))}·(x − ${fmt(c)})`
+    const tangentNote = (isFinite(f) && isFinite(d1))
+      ? `Tangent line: y = ${fmt(f)} ${d1 < 0 ? '−' : '+'} ${fmt(Math.abs(d1))}·(x − ${fmt(c)})`
       : 'Tangent line unavailable at this point.';
 
-    let d1State, d1Conc;
-    if (!isFinite(d2))   d1State = { text: '· undefined', cls: B.neutral };
-    else if (d2 > EPS)   d1State = { text: '▲ Rate increasing', cls: B.up };
-    else if (d2 < -EPS)  d1State = { text: '▼ Rate decreasing', cls: B.down };
-    else                 d1State = { text: '● Rate stationary', cls: B.flat };
+    const monotoneNote = !isFinite(d1)
+      ? 'The derivative is undefined here, so monotonicity cannot be classified.'
+      : d1 > EPS
+        ? `ƒ is increasing at x = ${fmt(c)} because ƒ′(c) = ${fmt(d1)} > 0.`
+        : d1 < -EPS
+          ? `ƒ is decreasing at x = ${fmt(c)} because ƒ′(c) = ${fmt(d1)} < 0.`
+          : `ƒ is momentarily stationary at x = ${fmt(c)} (ƒ′(c) ≈ 0) — a possible local extremum.`;
 
-    if (!isFinite(d3))   d1Conc = { text: '· shape n/a', cls: B.neutral };
-    else if (d3 > EPS)   d1Conc = { text: '∪ Concave Up', cls: B.up };
-    else if (d3 < -EPS)  d1Conc = { text: '∩ Concave Down', cls: B.down };
-    else                 d1Conc = { text: '— Linear region', cls: B.neutral };
+    const concaveNote = !isFinite(d2)
+      ? 'The second derivative is undefined here, so concavity cannot be classified.'
+      : d2 > EPS
+        ? `The curve is concave upward at x = ${fmt(c)} because ƒ″(c) = ${fmt(d2)} > 0.`
+        : d2 < -EPS
+          ? `The curve is concave downward at x = ${fmt(c)} because ƒ″(c) = ${fmt(d2)} < 0.`
+          : `ƒ″(c) ≈ 0 — this may be an inflection point.`;
 
-    const noteD1 = isFinite(d1)
-      ? `ƒ′ measures the slope of ƒ — it is ${d1 > EPS ? 'positive (rising)' : d1 < -EPS ? 'negative (falling)' : 'zero (flat)'} here.`
-      : 'Derivative undefined at this point.';
+    els.analysis.innerHTML = `
+      <div class="panel p-4 sm:p-5 space-y-4">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <div class="flex items-center gap-2">
+            <h3 class="font-mono text-sm font-bold" style="color:${COL.f}">ƒ(x)</h3>
+            <span class="text-[10px] uppercase tracking-widest text-slate-500">point analysis</span>
+          </div>
+          <span class="font-mono text-xs text-amber-400">
+            c = ${fmt(c, 4)}
+          </span>
+        </div>
 
-    let d2Behav, d2Region;
-    if (!isFinite(d3))   d2Behav = { text: '· undefined', cls: B.neutral };
-    else if (d3 > EPS)   d2Behav = { text: '↗ Concavity increasing', cls: B.up };
-    else if (d3 < -EPS)  d2Behav = { text: '↘ Concavity decreasing', cls: B.down };
-    else                 d2Behav = { text: '→ Concavity constant', cls: B.flat };
+        <div class="grid grid-cols-2 gap-2">
+          <div class="stat-box">
+            <div class="stat-label">Value ƒ(c)</div>
+            <div class="stat-value">${fmt(f)}</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-label">Slope ƒ′(c)</div>
+            <div class="stat-value">${fmt(d1)}</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-label">Concavity ƒ″(c)</div>
+            <div class="stat-value">${fmt(d2)}</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-label">Tangent slope</div>
+            <div class="stat-value">${fmt(d1)}</div>
+          </div>
+        </div>
 
-    if (!isFinite(d2))   d2Region = { text: '· undefined', cls: B.neutral };
-    else if (d2 > EPS)   d2Region = { text: '∪ ƒ is convex (up)', cls: B.info };
-    else if (d2 < -EPS)  d2Region = { text: '∩ ƒ is concave (down)', cls: B.info };
-    else                 d2Region = { text: '◆ Possible inflection', cls: B.violet };
+        <div class="flex flex-wrap gap-1.5">
+          <span class="badge ${fState.cls}">${fState.text}</span>
+          <span class="badge ${fConc.cls}">${fConc.text}</span>
+        </div>
 
-    const noteD2 = isFinite(d2)
-      ? `ƒ″ = ${fmt(d2)} → curvature is ${d2 > EPS ? 'positive (cup-shaped)' : d2 < -EPS ? 'negative (cap-shaped)' : 'zero'}.`
-      : 'Second derivative undefined at this point.';
-
-    els.analysis.innerHTML = [
-      statCard({
-        title: 'ƒ(x)', color: COL.f,
-        value: fmt(f), slopeLabel: 'Slope ƒ′(c)', slope: fmt(d1),
-        badges: [fState, fConc], note: noteF
-      }),
-      statCard({
-        title: 'ƒ′(x)', color: COL.d1,
-        value: fmt(d1), slopeLabel: 'Slope ƒ″(c)', slope: fmt(d2),
-        badges: [d1State, d1Conc], note: noteD1
-      }),
-      statCard({
-        title: 'ƒ″(x)', color: COL.d2,
-        value: fmt(d2), slopeLabel: 'Slope ƒ‴(c)', slope: fmt(d3),
-        badges: [d2Region, d2Behav], note: noteD2
-      })
-    ].join('');
+        <div class="space-y-1.5 text-[11px] text-slate-400 leading-relaxed font-mono pt-1 border-t border-slate-800">
+          <p class="pt-2">${esc(monotoneNote)}</p>
+          <p>${esc(concaveNote)}</p>
+          <p class="text-slate-500">${esc(tangentNote)}</p>
+        </div>
+      </div>
+    `;
   }
 
   /* ══════════════════════════════════════════════════════════
      Interaction
      ══════════════════════════════════════════════════════════ */
-  function setC(v) {
+  function setC(v, fromInput) {
     v = Math.min(S.xmax, Math.max(S.xmin, v));
     S.c = v;
     els.cSlider.value = v;
-    els.cVal.textContent = v.toFixed(3);
+    if (!fromInput) els.cInput.value = Number(v.toFixed(4));
+    els.cHint.textContent = `in [${fmt(S.xmin)}, ${fmt(S.xmax)}]`;
     scheduleC();
   }
 
@@ -885,58 +956,47 @@
     if (typeof p.x === 'number' && isFinite(p.x)) setC(p.x);
   }
 
-  function readRange() {
-    let a = parseFloat(els.xmin.value);
-    let b = parseFloat(els.xmax.value);
-    if (!isFinite(a)) a = -5;
-    if (!isFinite(b)) b = 5;
-    if (b <= a) b = a + 1;
-    S.xmin = a;
-    S.xmax = b;
-    els.xmin.value = a;
-    els.xmax.value = b;
-  }
-
   function syncSliderBounds() {
     const s = els.cSlider;
     s.min = S.xmin;
     s.max = S.xmax;
     s.step = (S.xmax - S.xmin) / 2000;
-    S.c = Math.min(S.xmax, Math.max(S.xmin, S.c));
+    if (S.c < S.xmin) S.c = S.xmin;
+    if (S.c > S.xmax) S.c = S.xmax;
     s.value = S.c;
-    els.cVal.textContent = S.c.toFixed(3);
+    els.cHint.textContent = `in [${fmt(S.xmin)}, ${fmt(S.xmax)}]`;
   }
 
   /* ── Wiring ─────────────────────────────────────────────── */
   els.plotBtn.addEventListener('click', fullRender);
+  els.resetBtn.addEventListener('click', resetView);
 
   els.fnInput.addEventListener('keydown', e => {
     if (e.key === 'Enter') { e.preventDefault(); fullRender(); }
   });
 
-  document.querySelectorAll('.preset').forEach(btn => {
-    btn.addEventListener('click', () => {
-      els.fnInput.value = btn.dataset.expr;
-      document.querySelectorAll('.preset').forEach(b => b.classList.toggle('active', b === btn));
-      fullRender();
-    });
-  });
-
-  els.xmin.addEventListener('change', fullRender);
-  els.xmax.addEventListener('change', fullRender);
-
-  els.res.addEventListener('input', () => {
-    els.resVal.textContent = els.res.value + ' pts';
-  });
-  els.res.addEventListener('change', () => {
-    S.n = parseInt(els.res.value, 10) || 1200;
-    fullRender();
-  });
-
   els.cSlider.addEventListener('input', () => {
-    S.c = parseFloat(els.cSlider.value);
-    els.cVal.textContent = S.c.toFixed(3);
+    const v = parseFloat(els.cSlider.value);
+    S.c = v;
+    els.cInput.value = Number(v.toFixed(4));
+    els.cHint.textContent = `in [${fmt(S.xmin)}, ${fmt(S.xmax)}]`;
     scheduleC();
+  });
+
+  els.cInput.addEventListener('input', () => {
+    const v = parseFloat(els.cInput.value);
+    if (!isFinite(v)) return;
+    setC(v, true);
+  });
+
+  els.cInput.addEventListener('blur', () => {
+    const v = parseFloat(els.cInput.value);
+    if (!isFinite(v)) {
+      els.cInput.value = Number(S.c.toFixed(4));
+    } else {
+      setC(v);
+      els.cInput.value = Number(S.c.toFixed(4));
+    }
   });
 
   document.querySelectorAll('.series-toggle').forEach(cb => {
@@ -955,11 +1015,11 @@
 
   /* ── Boot ───────────────────────────────────────────────── */
   (function boot() {
-    document.querySelectorAll('.preset').forEach(b => {
-      if (b.dataset.expr === els.fnInput.value.trim()) b.classList.add('active');
-    });
-    els.resVal.textContent = els.res.value + ' pts';
-    S.n = parseInt(els.res.value, 10) || 1200;
+    S.n = FIXED_RES;
+    S.c = 1;
+    els.cInput.value = 1;
+    els.cSlider.value = 1;
+    els.cHint.textContent = `in [${INITIAL_MIN}, ${INITIAL_MAX}]`;
     fullRender();
   })();
 
