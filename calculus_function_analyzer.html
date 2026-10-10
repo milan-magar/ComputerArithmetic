@@ -1,0 +1,1005 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculus Function Analyzer & Grapher</title>
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Math.js for symbolic & numeric differentiation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/11.8.0/math.js"></script>
+
+    <!-- Plotly.js for interactive high-performance charts -->
+    <script src="https://cdn.plot.ly/plotly-2.26.0.min.js"></script>
+
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Inter Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+
+    <!-- Custom CSS for specialized styling -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0f172a;
+            color: #f8fafc;
+        }
+        
+        .code-font {
+            font-family: 'Fira Code', monospace;
+        }
+
+        /* Custom Scrollbars */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #1e293b;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #475569;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #64748b;
+        }
+
+        /* Glassmorphism panel styling */
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        /* Glow effects for active elements */
+        .glow-blue {
+            box-shadow: 0 0 15px rgba(59, 130, 246, 0.25);
+        }
+
+        .glow-emerald {
+            box-shadow: 0 0 15px rgba(16, 185, 129, 0.25);
+        }
+
+        .glow-amber {
+            box-shadow: 0 0 15px rgba(245, 158, 11, 0.25);
+        }
+
+        /* Plotly modebar custom styling override */
+        .js-plotly-plot .plotly .modebar {
+            top: 8px !important;
+            right: 8px !important;
+            background: rgba(15, 23, 42, 0.8) !important;
+            border-radius: 8px;
+            padding: 4px;
+        }
+        .js-plotly-plot .plotly .modebar-btn path {
+            fill: #94a3b8 !important;
+        }
+        .js-plotly-plot .plotly .modebar-btn:hover path {
+            fill: #38bdf8 !important;
+        }
+
+        /* Smooth Slider Styling */
+        input[type=range] {
+            -webkit-appearance: none;
+            background: transparent;
+        }
+        input[type=range]:focus {
+            outline: none;
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 6px;
+            cursor: pointer;
+            background: #334155;
+            border-radius: 4px;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            height: 18px;
+            width: 18px;
+            border-radius: 50%;
+            background: #38bdf8;
+            cursor: pointer;
+            -webkit-appearance: none;
+            margin-top: -6px;
+            box-shadow: 0 0 8px rgba(56, 189, 248, 0.5);
+            transition: transform 0.1s ease;
+        }
+        input[type=range]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col bg-slate-950 text-slate-100 overflow-x-hidden">
+
+    <!-- Navbar Header -->
+    <header class="glass-panel sticky top-0 z-50 border-b border-slate-800 bg-slate-900/80 px-4 py-3 sm:px-6">
+        <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-4">
+            <div class="flex items-center gap-3">
+                <div class="p-2.5 bg-gradient-to-tr from-blue-600 to-cyan-500 rounded-xl text-white shadow-lg shadow-blue-500/20">
+                    <i class="fa-solid me-1 fa-wave-square text-xl"></i>
+                    <i class="fa-solid fa-chart-line text-sm"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold tracking-tight bg-gradient-to-r from-blue-400 via-cyan-300 to-indigo-300 bg-clip-text text-transparent">
+                        Calculus Analyzer Pro
+                    </h1>
+                    <p class="text-xs text-slate-400">Interactive derivative, slope, and concavity explorer</p>
+                </div>
+            </div>
+
+            <!-- Header Quick Preset Buttons -->
+            <div class="flex flex-wrap items-center gap-2">
+                <span class="text-xs text-slate-400 font-medium mr-1 hidden sm:inline"><i class="fa-solid fa-bolt text-amber-400 me-1"></i>Presets:</span>
+                <button onclick="loadPreset('x^3 - 3*x')" class="px-2.5 py-1 text-xs font-medium bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg border border-slate-700 transition">Cubic</button>
+                <button onclick="loadPreset('sin(2*x)')" class="px-2.5 py-1 text-xs font-medium bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg border border-slate-700 transition">Sin(2x)</button>
+                <button onclick="loadPreset('x * exp(-x^2)')" class="px-2.5 py-1 text-xs font-medium bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg border border-slate-700 transition">Gaussian Bump</button>
+                <button onclick="loadPreset('x^4 - 4*x^2 + x')" class="px-2.5 py-1 text-xs font-medium bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg border border-slate-700 transition">Polynomial</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Workspace -->
+    <main class="flex-1 max-w-7xl w-full mx-auto p-3 sm:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+        <!-- Left Controls Sidebar (4 Cols) -->
+        <div class="lg:col-span-4 flex flex-col gap-5">
+
+            <!-- Function Input Panel -->
+            <div class="glass-panel p-5 rounded-2xl shadow-xl flex flex-col gap-4">
+                <h2 class="text-sm font-semibold text-slate-300 uppercase tracking-wider flex items-center gap-2">
+                    <i class="fa-solid fa-square-root-variable text-blue-400"></i> Function Definition
+                </h2>
+
+                <div class="space-y-2">
+                    <label for="functionInput" class="block text-xs font-medium text-slate-400">
+                        Enter f(x):
+                    </label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-blue-400 font-semibold text-sm">
+                            f(x) =
+                        </span>
+                        <input type="text" id="functionInput" value="x^3 - 3*x" 
+                            class="w-full pl-14 pr-10 py-2.5 bg-slate-950 border border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-slate-100 code-font text-sm shadow-inner transition"
+                            placeholder="e.g. x^3 - 3*x"
+                            onkeydown="if(event.key === 'Enter') analyzeAndRender()">
+                        <button onclick="analyzeAndRender()" class="absolute inset-y-1 right-1 px-3 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-medium transition flex items-center justify-center">
+                            <i class="fa-solid fa-play"></i>
+                        </button>
+                    </div>
+                    <p id="errorMessage" class="text-xs text-rose-400 hidden flex items-center gap-1 mt-1">
+                        <i class="fa-solid fa-triangle-exclamation"></i> <span id="errorText">Invalid expression</span>
+                    </p>
+                </div>
+
+                <!-- Parsed Expressions Preview -->
+                <div class="p-3 bg-slate-950/60 rounded-xl border border-slate-800/80 space-y-2 text-xs code-font">
+                    <div class="flex justify-between items-center text-blue-400">
+                        <span class="font-bold">f(x):</span>
+                        <span id="latexFx" class="truncate max-w-[200px] text-slate-200">x^3 - 3*x</span>
+                    </div>
+                    <div class="flex justify-between items-center text-emerald-400">
+                        <span class="font-bold">f'(x):</span>
+                        <span id="latexF1x" class="truncate max-w-[200px] text-slate-200">3*x^2 - 3</span>
+                    </div>
+                    <div class="flex justify-between items-center text-amber-400">
+                        <span class="font-bold">f''(x):</span>
+                        <span id="latexF2x" class="truncate max-w-[200px] text-slate-200">6*x</span>
+                    </div>
+                </div>
+
+                <!-- Domain Settings -->
+                <div class="border-t border-slate-800 pt-3">
+                    <div class="flex justify-between items-center mb-2">
+                        <label class="text-xs font-semibold text-slate-300">Domain Range [X Min, X Max]</label>
+                        <button onclick="resetDomain()" class="text-[10px] text-slate-400 hover:text-slate-200 underline">Reset</button>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <span class="text-[11px] text-slate-400 block mb-1">X Min</span>
+                            <input type="number" id="xMin" value="-3" step="0.5" 
+                                class="w-full px-2.5 py-1.5 bg-slate-950 border border-slate-700 rounded-lg text-xs code-font text-slate-200 focus:border-blue-500 focus:outline-none"
+                                onchange="analyzeAndRender()">
+                        </div>
+                        <div>
+                            <span class="text-[11px] text-slate-400 block mb-1">X Max</span>
+                            <input type="number" id="xMax" value="3" step="0.5" 
+                                class="w-full px-2.5 py-1.5 bg-slate-950 border border-slate-700 rounded-lg text-xs code-font text-slate-200 focus:border-blue-500 focus:outline-none"
+                                onchange="analyzeAndRender()">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- View Modes & Trace Visibility -->
+                <div class="border-t border-slate-800 pt-3 space-y-3">
+                    <label class="text-xs font-semibold text-slate-300 block">Layout & Curve Visibility</label>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button id="btnLayoutStacked" onclick="setLayoutMode('stacked')" class="py-1.5 px-3 text-xs rounded-lg border border-blue-500 bg-blue-500/20 text-blue-300 font-medium transition text-center">
+                            <i class="fa-solid fa-list-check me-1"></i> Subplots
+                        </button>
+                        <button id="btnLayoutOverlay" onclick="setLayoutMode('overlay')" class="py-1.5 px-3 text-xs rounded-lg border border-slate-700 bg-slate-900 text-slate-400 font-medium transition text-center hover:bg-slate-800">
+                            <i class="fa-solid fa-layer-group me-1"></i> Overlay
+                        </button>
+                    </div>
+
+                    <!-- Visibility Toggles -->
+                    <div class="flex items-center justify-between gap-2 pt-1">
+                        <label class="flex items-center gap-1.5 cursor-pointer text-xs text-blue-400">
+                            <input type="checkbox" id="toggleFx" checked onchange="updateTraceVisibilities()" class="rounded bg-slate-900 border-slate-700 text-blue-600 focus:ring-0">
+                            <span>f(x)</span>
+                        </label>
+                        <label class="flex items-center gap-1.5 cursor-pointer text-xs text-emerald-400">
+                            <input type="checkbox" id="toggleF1x" checked onchange="updateTraceVisibilities()" class="rounded bg-slate-900 border-slate-700 text-emerald-600 focus:ring-0">
+                            <span>f'(x)</span>
+                        </label>
+                        <label class="flex items-center gap-1.5 cursor-pointer text-xs text-amber-400">
+                            <input type="checkbox" id="toggleF2x" checked onchange="updateTraceVisibilities()" class="rounded bg-slate-900 border-slate-700 text-amber-600 focus:ring-0">
+                            <span>f''(x)</span>
+                        </label>
+                        <label class="flex items-center gap-1.5 cursor-pointer text-xs text-purple-400">
+                            <input type="checkbox" id="toggleTangent" checked onchange="updateTraceVisibilities()" class="rounded bg-slate-900 border-slate-700 text-purple-600 focus:ring-0">
+                            <span>Tangent</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Interactive Cursor Control Card -->
+            <div class="glass-panel p-5 rounded-2xl shadow-xl flex flex-col gap-3">
+                <div class="flex justify-between items-center">
+                    <h2 class="text-sm font-semibold text-slate-300 uppercase tracking-wider flex items-center gap-2">
+                        <i class="fa-solid fa-crosshairs text-cyan-400"></i> Evaluation Point (x = c)
+                    </h2>
+                    <span id="xPointDisplay" class="px-2.5 py-1 bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 rounded-lg text-sm font-bold code-font">
+                        x = 1.00
+                    </span>
+                </div>
+
+                <div class="space-y-1">
+                    <input type="range" id="xSlider" min="-3" max="3" step="0.01" value="1.0" class="w-full" oninput="onSliderChange(this.value)">
+                    <div class="flex justify-between text-[10px] text-slate-500 code-font">
+                        <span id="sliderMinLabel">-3.0</span>
+                        <span>Drag slider or hover over graphs</span>
+                        <span id="sliderMaxLabel">3.0</span>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-2 pt-1">
+                    <button onclick="stepPoint(-0.1)" class="py-1 px-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-medium border border-slate-700">
+                        <i class="fa-solid fa-minus me-1"></i> Step -0.1
+                    </button>
+                    <button onclick="stepPoint(0.1)" class="py-1 px-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-medium border border-slate-700">
+                        <i class="fa-solid fa-plus me-1"></i> Step +0.1
+                    </button>
+                </div>
+            </div>
+
+            <!-- Found Key Points (Extrema & Inflections) -->
+            <div class="glass-panel p-4 rounded-2xl shadow-xl flex flex-col gap-2">
+                <h3 class="text-xs font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-2">
+                    <i class="fa-solid fa-map-pin text-rose-400"></i> Key Features in Range
+                </h3>
+                <div id="keyPointsList" class="max-h-36 overflow-y-auto space-y-1.5 pr-1 text-xs">
+                    <!-- Dynamic key points loaded here -->
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Right Main View (8 Cols): Graphs & Detailed Real-time Calculus Analysis -->
+        <div class="lg:col-span-8 flex flex-col gap-5">
+
+            <!-- Plot Area Card -->
+            <div class="glass-panel p-4 rounded-2xl shadow-2xl flex flex-col relative min-h-[460px] border border-slate-800">
+                <div class="flex items-center justify-between mb-2 px-1">
+                    <div class="flex items-center gap-2">
+                        <span class="flex h-2.5 w-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                        <span class="text-xs font-semibold text-slate-300 uppercase tracking-wider">Synchronized Plot View</span>
+                    </div>
+                    <div class="text-[11px] text-slate-400 flex items-center gap-3">
+                        <span class="flex items-center gap-1"><span class="w-2.5 h-0.5 bg-blue-500 inline-block"></span> f(x)</span>
+                        <span class="flex items-center gap-1"><span class="w-2.5 h-0.5 bg-emerald-500 inline-block"></span> f'(x)</span>
+                        <span class="flex items-center gap-1"><span class="w-2.5 h-0.5 bg-amber-500 inline-block"></span> f''(x)</span>
+                    </div>
+                </div>
+
+                <!-- Plot Container -->
+                <div id="plotDiv" class="w-full flex-1 min-h-[420px]"></div>
+            </div>
+
+            <!-- Real-Time Point Analysis Panel -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+
+                <!-- f(x) Analysis Card -->
+                <div class="glass-panel p-4 rounded-2xl border-t-4 border-t-blue-500 flex flex-col justify-between gap-3 shadow-lg glow-blue">
+                    <div>
+                        <div class="flex justify-between items-center mb-1">
+                            <span class="text-xs font-bold text-blue-400 uppercase tracking-wider">Original f(x)</span>
+                            <span id="fxVal" class="text-sm font-bold code-font text-white">0.00</span>
+                        </div>
+                        <p class="text-[11px] text-slate-400 mb-3">Behavior at point x = <span class="pointVal">1.00</span></p>
+
+                        <div class="space-y-2">
+                            <div class="p-2 rounded-xl bg-slate-900/80 border border-slate-800">
+                                <span class="text-[10px] text-slate-400 block mb-0.5">Monotonicity (Slope)</span>
+                                <div id="fxMonotonicity" class="text-xs font-semibold flex items-center gap-1.5 text-emerald-400">
+                                    <i class="fa-solid fa-arrow-trend-up"></i> Increasing
+                                </div>
+                            </div>
+
+                            <div class="p-2 rounded-xl bg-slate-900/80 border border-slate-800">
+                                <span class="text-[10px] text-slate-400 block mb-0.5">Concavity</span>
+                                <div id="fxConcavity" class="text-xs font-semibold flex items-center gap-1.5 text-amber-400">
+                                    <i class="fa-solid fa-smile"></i> Concave Upward
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="pt-2 border-t border-slate-800/80 text-[11px] text-slate-400 code-font flex justify-between">
+                        <span>Slope f'(c):</span>
+                        <span id="fxSlopeVal" class="font-bold text-slate-200">0.00</span>
+                    </div>
+                </div>
+
+                <!-- f'(x) Analysis Card -->
+                <div class="glass-panel p-4 rounded-2xl border-t-4 border-t-emerald-500 flex flex-col justify-between gap-3 shadow-lg glow-emerald">
+                    <div>
+                        <div class="flex justify-between items-center mb-1">
+                            <span class="text-xs font-bold text-emerald-400 uppercase tracking-wider">1st Derivative f'(x)</span>
+                            <span id="f1xVal" class="text-sm font-bold code-font text-white">0.00</span>
+                        </div>
+                        <p class="text-[11px] text-slate-400 mb-3">Rate of change of f(x)</p>
+
+                        <div class="space-y-2">
+                            <div class="p-2 rounded-xl bg-slate-900/80 border border-slate-800">
+                                <span class="text-[10px] text-slate-400 block mb-0.5">f'(x) Behavior</span>
+                                <div id="f1xMonotonicity" class="text-xs font-semibold flex items-center gap-1.5 text-emerald-400">
+                                    <i class="fa-solid fa-arrow-trend-up"></i> Increasing
+                                </div>
+                            </div>
+
+                            <div class="p-2 rounded-xl bg-slate-900/80 border border-slate-800">
+                                <span class="text-[10px] text-slate-400 block mb-0.5">f'(x) Concavity</span>
+                                <div id="f1xConcavity" class="text-xs font-semibold flex items-center gap-1.5 text-cyan-400">
+                                    <i class="fa-solid fa-arrows-left-right"></i> Concave Up
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="pt-2 border-t border-slate-800/80 text-[11px] text-slate-400 code-font flex justify-between">
+                        <span>Slope f''(c):</span>
+                        <span id="f1xSlopeVal" class="font-bold text-slate-200">0.00</span>
+                    </div>
+                </div>
+
+                <!-- f''(x) Analysis Card -->
+                <div class="glass-panel p-4 rounded-2xl border-t-4 border-t-amber-500 flex flex-col justify-between gap-3 shadow-lg glow-amber">
+                    <div>
+                        <div class="flex justify-between items-center mb-1">
+                            <span class="text-xs font-bold text-amber-400 uppercase tracking-wider">2nd Derivative f''(x)</span>
+                            <span id="f2xVal" class="text-sm font-bold code-font text-white">0.00</span>
+                        </div>
+                        <p class="text-[11px] text-slate-400 mb-3">Concavity measure of f(x)</p>
+
+                        <div class="space-y-2">
+                            <div class="p-2 rounded-xl bg-slate-900/80 border border-slate-800">
+                                <span class="text-[10px] text-slate-400 block mb-0.5">f''(x) Behavior</span>
+                                <div id="f2xMonotonicity" class="text-xs font-semibold flex items-center gap-1.5 text-emerald-400">
+                                    <i class="fa-solid fa-arrow-trend-up"></i> Increasing
+                                </div>
+                            </div>
+
+                            <div class="p-2 rounded-xl bg-slate-900/80 border border-slate-800">
+                                <span class="text-[10px] text-slate-400 block mb-0.5">3rd Derivative f'''(c)</span>
+                                <div id="f3xVal" class="text-xs font-semibold text-purple-300 code-font">
+                                    6.00
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="pt-2 border-t border-slate-800/80 text-[11px] text-slate-400 code-font flex justify-between">
+                        <span>Slope f'''(c):</span>
+                        <span id="f2xSlopeVal" class="font-bold text-slate-200">0.00</span>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+    </main>
+
+    <script>
+        /* Global State Variables */
+        let state = {
+            expression: 'x^3 - 3*x',
+            compiledF: null,
+            compiledF1: null,
+            compiledF2: null,
+            compiledF3: null,
+            nodeF1: null,
+            nodeF2: null,
+            nodeF3: null,
+            xMin: -3,
+            xMax: 3,
+            currentX: 1.0,
+            layoutMode: 'stacked', // 'stacked' or 'overlay'
+            visibleTraces: {
+                fx: true,
+                f1x: true,
+                f2x: true,
+                tangent: true
+            },
+            keyPoints: []
+        };
+
+        // Initialize on load
+        window.addEventListener('load', () => {
+            analyzeAndRender();
+            
+            // Resize handler for responsive charts
+            window.addEventListener('resize', () => {
+                Plotly.Plots.resize(document.getElementById('plotDiv'));
+            });
+        });
+
+        /* Preset Handler */
+        function loadPreset(expr) {
+            document.getElementById('functionInput').value = expr;
+            analyzeAndRender();
+        }
+
+        /* Reset Domain */
+        function resetDomain() {
+            document.getElementById('xMin').value = -3;
+            document.getElementById('xMax').value = 3;
+            analyzeAndRender();
+        }
+
+        /* Toggle Layout Mode */
+        function setLayoutMode(mode) {
+            state.layoutMode = mode;
+            const btnStacked = document.getElementById('btnLayoutStacked');
+            const btnOverlay = document.getElementById('btnLayoutOverlay');
+
+            if (mode === 'stacked') {
+                btnStacked.className = "py-1.5 px-3 text-xs rounded-lg border border-blue-500 bg-blue-500/20 text-blue-300 font-medium transition text-center";
+                btnOverlay.className = "py-1.5 px-3 text-xs rounded-lg border border-slate-700 bg-slate-900 text-slate-400 font-medium transition text-center hover:bg-slate-800";
+            } else {
+                btnOverlay.className = "py-1.5 px-3 text-xs rounded-lg border border-blue-500 bg-blue-500/20 text-blue-300 font-medium transition text-center";
+                btnStacked.className = "py-1.5 px-3 text-xs rounded-lg border border-slate-700 bg-slate-900 text-slate-400 font-medium transition text-center hover:bg-slate-800";
+            }
+            renderCharts();
+        }
+
+        /* Update visibility states */
+        function updateTraceVisibilities() {
+            state.visibleTraces.fx = document.getElementById('toggleFx').checked;
+            state.visibleTraces.f1x = document.getElementById('toggleF1x').checked;
+            state.visibleTraces.f2x = document.getElementById('toggleF2x').checked;
+            state.visibleTraces.tangent = document.getElementById('toggleTangent').checked;
+            renderCharts();
+        }
+
+        /* Main Parsing & Calculus Pipeline */
+        function analyzeAndRender() {
+            const inputStr = document.getElementById('functionInput').value.trim();
+            const errEl = document.getElementById('errorMessage');
+            const errTxt = document.getElementById('errorText');
+
+            try {
+                // Parse original function
+                const nodeF = math.parse(inputStr);
+                state.compiledF = nodeF.compile();
+
+                // Compute symbolic derivatives using math.js
+                state.nodeF1 = math.derivative(nodeF, 'x');
+                state.compiledF1 = state.nodeF1.compile();
+
+                state.nodeF2 = math.derivative(state.nodeF1, 'x');
+                state.compiledF2 = state.nodeF2.compile();
+
+                state.nodeF3 = math.derivative(state.nodeF2, 'x');
+                state.compiledF3 = state.nodeF3.compile();
+
+                // Update text expressions
+                document.getElementById('latexFx').innerText = inputStr;
+                document.getElementById('latexF1x').innerText = state.nodeF1.toString();
+                document.getElementById('latexF2x').innerText = state.nodeF2.toString();
+
+                errEl.classList.add('hidden');
+                state.expression = inputStr;
+
+                // Update Domain Settings
+                state.xMin = parseFloat(document.getElementById('xMin').value) || -3;
+                state.xMax = parseFloat(document.getElementById('xMax').value) || 3;
+                
+                if (state.xMin >= state.xMax) {
+                    state.xMax = state.xMin + 1;
+                    document.getElementById('xMax').value = state.xMax;
+                }
+
+                // Update Slider Bounds
+                const slider = document.getElementById('xSlider');
+                slider.min = state.xMin;
+                slider.max = state.xMax;
+                document.getElementById('sliderMinLabel').innerText = state.xMin.toFixed(1);
+                document.getElementById('sliderMaxLabel').innerText = state.xMax.toFixed(1);
+
+                // Clamp current evaluation point
+                if (state.currentX < state.xMin || state.currentX > state.xMax) {
+                    state.currentX = (state.xMin + state.xMax) / 2;
+                }
+                slider.value = state.currentX;
+
+                // Find local features (critical points, inflections)
+                detectKeyPoints();
+
+                // Render Plots & Update Cards
+                renderCharts();
+                updateCalculusAnalysisCard();
+
+            } catch (err) {
+                console.error(err);
+                errTxt.innerText = err.message || "Invalid mathematical function syntax";
+                errEl.classList.remove('hidden');
+            }
+        }
+
+        /* Evaluate safely */
+        function safeEval(compiled, xVal) {
+            try {
+                const res = compiled.evaluate({ x: xVal });
+                if (typeof res === 'number' && !isNaN(res) && isFinite(res)) {
+                    return res;
+                }
+                return null;
+            } catch (e) {
+                return null;
+            }
+        }
+
+        /* Numerical derivative fallback / 3rd derivative helper */
+        function evalF3(xVal) {
+            const val = safeEval(state.compiledF3, xVal);
+            if (val !== null) return val;
+            // Central finite difference for 3rd derivative if symbolic fails
+            const h = 0.0001;
+            const f2Plus = safeEval(state.compiledF2, xVal + h);
+            const f2Minus = safeEval(state.compiledF2, xVal - h);
+            if (f2Plus !== null && f2Minus !== null) {
+                return (f2Plus - f2Minus) / (2 * h);
+            }
+            return 0;
+        }
+
+        /* Detect local Extrema & Inflection points across current domain */
+        function detectKeyPoints() {
+            state.keyPoints = [];
+            const steps = 300;
+            const dx = (state.xMax - state.xMin) / steps;
+
+            let prevF1 = safeEval(state.compiledF1, state.xMin);
+            let prevF2 = safeEval(state.compiledF2, state.xMin);
+
+            for (let i = 1; i <= steps; i++) {
+                const x = state.xMin + i * dx;
+                const f1 = safeEval(state.compiledF1, x);
+                const f2 = safeEval(state.compiledF2, x);
+
+                if (f1 !== null && prevF1 !== null) {
+                    // Critical point (f' changes sign)
+                    if ((prevF1 < 0 && f1 > 0) || (prevF1 > 0 && f1 < 0)) {
+                        const rootX = x - dx / 2; // approximate root
+                        const fVal = safeEval(state.compiledF, rootX);
+                        const f2Val = safeEval(state.compiledF2, rootX);
+                        const type = f2Val > 0 ? 'Local Min' : 'Local Max';
+                        state.keyPoints.push({ x: rootX, y: fVal, type: type, color: '#f43f5e' });
+                    }
+                }
+
+                if (f2 !== null && prevF2 !== null) {
+                    // Inflection point (f'' changes sign)
+                    if ((prevF2 < 0 && f2 > 0) || (prevF2 > 0 && f2 < 0)) {
+                        const rootX = x - dx / 2;
+                        const fVal = safeEval(state.compiledF, rootX);
+                        state.keyPoints.push({ x: rootX, y: fVal, type: 'Inflection Pt', color: '#c084fc' });
+                    }
+                }
+
+                prevF1 = f1;
+                prevF2 = f2;
+            }
+
+            // Render Key Points in UI list
+            const listEl = document.getElementById('keyPointsList');
+            if (state.keyPoints.length === 0) {
+                listEl.innerHTML = `<span class="text-slate-500 italic">No local extrema or inflection points found in this domain.</span>`;
+            } else {
+                listEl.innerHTML = state.keyPoints.map(pt => `
+                    <div class="flex justify-between items-center bg-slate-900/60 p-1.5 rounded-lg border border-slate-800">
+                        <span class="flex items-center gap-1.5 font-medium" style="color: ${pt.color}">
+                            <i class="fa-solid fa-location-dot"></i> ${pt.type}
+                        </span>
+                        <span class="code-font text-slate-300">
+                            (${pt.x.toFixed(2)}, ${pt.y !== null ? pt.y.toFixed(2) : 'N/A'})
+                        </span>
+                        <button onclick="setPoint(${pt.x})" class="text-[10px] bg-slate-800 hover:bg-slate-700 text-cyan-400 px-1.5 py-0.5 rounded border border-slate-700">
+                            Jump
+                        </button>
+                    </div>
+                `).join('');
+            }
+        }
+
+        /* Render Plotly Graphs with subplots or overlay */
+        function renderCharts() {
+            const numPoints = 400;
+            const xVals = [];
+            const yFx = [];
+            const yF1x = [];
+            const yF2x = [];
+
+            const step = (state.xMax - state.xMin) / (numPoints - 1);
+            for (let i = 0; i < numPoints; i++) {
+                const x = state.xMin + i * step;
+                xVals.push(x);
+                yFx.push(safeEval(state.compiledF, x));
+                yF1x.push(safeEval(state.compiledF1, x));
+                yF2x.push(safeEval(state.compiledF2, x));
+            }
+
+            const currentX = state.currentX;
+            const curFx = safeEval(state.compiledF, currentX);
+            const curF1x = safeEval(state.compiledF1, currentX);
+            const curF2x = safeEval(state.compiledF2, currentX);
+
+            // Compute Tangent Line data for f(x) at x = c: y = f'(c)*(x - c) + f(c)
+            const tangentX = [state.xMin, state.xMax];
+            const tangentY = tangentX.map(x => curF1x !== null && curFx !== null ? curF1x * (x - currentX) + curFx : null);
+
+            const traces = [];
+
+            if (state.layoutMode === 'stacked') {
+                // Multi-subplot mode (3 separate stacked axes)
+                
+                // Trace 1: f(x)
+                if (state.visibleTraces.fx) {
+                    traces.push({
+                        x: xVals, y: yFx,
+                        name: "f(x)",
+                        type: 'scatter', mode: 'lines',
+                        line: { color: '#3b82f6', width: 2.5 },
+                        xaxis: 'x', yaxis: 'y'
+                    });
+                    // Marker point
+                    traces.push({
+                        x: [currentX], y: [curFx],
+                        name: 'Point f(c)',
+                        type: 'scatter', mode: 'markers',
+                        marker: { color: '#60a5fa', size: 9, symbol: 'circle' },
+                        showlegend: false,
+                        xaxis: 'x', yaxis: 'y'
+                    });
+                    // Tangent line on f(x)
+                    if (state.visibleTraces.tangent && curF1x !== null) {
+                        traces.push({
+                            x: tangentX, y: tangentY,
+                            name: "Tangent at c",
+                            type: 'scatter', mode: 'lines',
+                            line: { color: '#c084fc', width: 2, dash: 'dash' },
+                            xaxis: 'x', yaxis: 'y'
+                        });
+                    }
+                }
+
+                // Trace 2: f'(x)
+                if (state.visibleTraces.f1x) {
+                    traces.push({
+                        x: xVals, y: yF1x,
+                        name: "f'(x)",
+                        type: 'scatter', mode: 'lines',
+                        line: { color: '#10b981', width: 2.5 },
+                        xaxis: 'x2', yaxis: 'y2'
+                    });
+                    traces.push({
+                        x: [currentX], y: [curF1x],
+                        name: "Point f'(c)",
+                        type: 'scatter', mode: 'markers',
+                        marker: { color: '#34d399', size: 9, symbol: 'circle' },
+                        showlegend: false,
+                        xaxis: 'x2', yaxis: 'y2'
+                    });
+                }
+
+                // Trace 3: f''(x)
+                if (state.visibleTraces.f2x) {
+                    traces.push({
+                        x: xVals, y: yF2x,
+                        name: "f''(x)",
+                        type: 'scatter', mode: 'lines',
+                        line: { color: '#f59e0b', width: 2.5 },
+                        xaxis: 'x3', yaxis: 'y3'
+                    });
+                    traces.push({
+                        x: [currentX], y: [curF2x],
+                        name: "Point f''(c)",
+                        type: 'scatter', mode: 'markers',
+                        marker: { color: '#fbbf24', size: 9, symbol: 'circle' },
+                        showlegend: false,
+                        xaxis: 'x3', yaxis: 'y3'
+                    });
+                }
+
+                // Key Points markers on f(x) trace
+                if (state.keyPoints.length > 0 && state.visibleTraces.fx) {
+                    traces.push({
+                        x: state.keyPoints.map(p => p.x),
+                        y: state.keyPoints.map(p => p.y),
+                        name: 'Key Features',
+                        type: 'scatter', mode: 'markers',
+                        marker: { color: state.keyPoints.map(p => p.color), size: 8, symbol: 'diamond' },
+                        text: state.keyPoints.map(p => p.type),
+                        hoverinfo: 'text+x+y',
+                        xaxis: 'x', yaxis: 'y'
+                    });
+                }
+
+            } else {
+                // Overlay mode (Single combined axis)
+                if (state.visibleTraces.fx) {
+                    traces.push({
+                        x: xVals, y: yFx, name: "f(x)",
+                        type: 'scatter', mode: 'lines',
+                        line: { color: '#3b82f6', width: 2.5 }
+                    });
+                    traces.push({
+                        x: [currentX], y: [curFx], name: 'f(c)',
+                        type: 'scatter', mode: 'markers',
+                        marker: { color: '#60a5fa', size: 9 }, showlegend: false
+                    });
+                    if (state.visibleTraces.tangent && curF1x !== null) {
+                        traces.push({
+                            x: tangentX, y: tangentY, name: "Tangent",
+                            type: 'scatter', mode: 'lines',
+                            line: { color: '#c084fc', width: 2, dash: 'dash' }
+                        });
+                    }
+                }
+
+                if (state.visibleTraces.f1x) {
+                    traces.push({
+                        x: xVals, y: yF1x, name: "f'(x)",
+                        type: 'scatter', mode: 'lines',
+                        line: { color: '#10b981', width: 2.5 }
+                    });
+                    traces.push({
+                        x: [currentX], y: [curF1x], name: "f'(c)",
+                        type: 'scatter', mode: 'markers',
+                        marker: { color: '#34d399', size: 9 }, showlegend: false
+                    });
+                }
+
+                if (state.visibleTraces.f2x) {
+                    traces.push({
+                        x: xVals, y: yF2x, name: "f''(x)",
+                        type: 'scatter', mode: 'lines',
+                        line: { color: '#f59e0b', width: 2.5 }
+                    });
+                    traces.push({
+                        x: [currentX], y: [curF2x], name: "f''(c)",
+                        type: 'scatter', mode: 'markers',
+                        marker: { color: '#fbbf24', size: 9 }, showlegend: false
+                    });
+                }
+            }
+
+            // Define Synchronized Layout Shapes (vertical line at current X)
+            const shapes = [];
+            const addVerticalCursor = (xaxis, yaxis) => {
+                shapes.push({
+                    type: 'line',
+                    xref: xaxis, yref: yaxis,
+                    x0: currentX, x1: currentX,
+                    y0: 0, y1: 1, yref: yaxis + ' domain',
+                    line: { color: '#38bdf8', width: 1.5, dash: 'dot' }
+                });
+            };
+
+            if (state.layoutMode === 'stacked') {
+                addVerticalCursor('x', 'y');
+                addVerticalCursor('x2', 'y2');
+                addVerticalCursor('x3', 'y3');
+            } else {
+                addVerticalCursor('x', 'y');
+            }
+
+            // Layout settings
+            const layout = {
+                paper_bgcolor: 'transparent',
+                plot_bgcolor: 'rgba(15, 23, 42, 0.4)',
+                margin: { l: 45, r: 25, t: 20, b: 40 },
+                showlegend: false,
+                hovermode: 'x unified',
+                shapes: shapes,
+                xaxis: {
+                    gridcolor: '#334155',
+                    zerolinecolor: '#64748b',
+                    tickfont: { color: '#94a3b8', family: 'Fira Code' },
+                    range: [state.xMin, state.xMax]
+                }
+            };
+
+            if (state.layoutMode === 'stacked') {
+                layout.grid = { rows: 3, columns: 1, sharex: true };
+                layout.subplots = [['xy'], ['x2y2'], ['x3y3']];
+                
+                layout.yaxis = { gridcolor: '#334155', zerolinecolor: '#64748b', tickfont: { color: '#94a3b8', family: 'Fira Code' }, title: { text: 'f(x)', font: { color: '#60a5fa', size: 11 } } };
+                layout.yaxis2 = { gridcolor: '#334155', zerolinecolor: '#64748b', tickfont: { color: '#94a3b8', family: 'Fira Code' }, title: { text: "f'(x)", font: { color: '#34d399', size: 11 } } };
+                layout.yaxis3 = { gridcolor: '#334155', zerolinecolor: '#64748b', tickfont: { color: '#94a3b8', family: 'Fira Code' }, title: { text: "f''(x)", font: { color: '#fbbf24', size: 11 } } };
+                
+                layout.xaxis2 = { gridcolor: '#334155', zerolinecolor: '#64748b', tickfont: { color: '#94a3b8', family: 'Fira Code' }, range: [state.xMin, state.xMax] };
+                layout.xaxis3 = { gridcolor: '#334155', zerolinecolor: '#64748b', tickfont: { color: '#94a3b8', family: 'Fira Code' }, range: [state.xMin, state.xMax] };
+            } else {
+                layout.yaxis = {
+                    gridcolor: '#334155',
+                    zerolinecolor: '#64748b',
+                    tickfont: { color: '#94a3b8', family: 'Fira Code' }
+                };
+            }
+
+            const config = {
+                responsive: true,
+                displayModeBar: true,
+                displaylogo: false,
+                modeBarButtonsToRemove: ['select2d', 'lasso2d']
+            };
+
+            Plotly.react('plotDiv', traces, layout, config);
+
+            // Bind mouse hover to update cursor point dynamically
+            const plotDiv = document.getElementById('plotDiv');
+            plotDiv.on('plotly_hover', function(data) {
+                if (data.points && data.points[0]) {
+                    const hoveredX = data.points[0].x;
+                    setPoint(hoveredX, false); // Don't trigger full re-plot on hover to keep smooth
+                }
+            });
+        }
+
+        /* Set evaluation point */
+        function setPoint(xVal, updatePlot = true) {
+            state.currentX = Math.max(state.xMin, Math.min(state.xMax, xVal));
+            document.getElementById('xSlider').value = state.currentX;
+            updateCalculusAnalysisCard();
+
+            if (updatePlot) {
+                renderCharts();
+            } else {
+                // Update cursor line positions efficiently
+                Plotly.relayout('plotDiv', {
+                    'shapes[0].x0': state.currentX, 'shapes[0].x1': state.currentX,
+                    'shapes[1].x0': state.currentX, 'shapes[1].x1': state.currentX,
+                    'shapes[2].x0': state.currentX, 'shapes[2].x1': state.currentX
+                });
+            }
+        }
+
+        function onSliderChange(val) {
+            setPoint(parseFloat(val), true);
+        }
+
+        function stepPoint(delta) {
+            setPoint(state.currentX + delta, true);
+        }
+
+        /* Update Panel Calculations & Verbal Behavior Descriptions */
+        function updateCalculusAnalysisCard() {
+            const c = state.currentX;
+
+            // Display formatted X coordinate
+            document.getElementById('xPointDisplay').innerText = `x = ${c.toFixed(2)}`;
+            document.querySelectorAll('.pointVal').forEach(el => el.innerText = c.toFixed(2));
+
+            // Compute actual values
+            const fx = safeEval(state.compiledF, c);
+            const f1x = safeEval(state.compiledF1, c);
+            const f2x = safeEval(state.compiledF2, c);
+            const f3x = evalF3(c);
+
+            const formatVal = v => v !== null ? (Math.abs(v) < 0.0001 ? '0.000' : v.toFixed(3)) : 'N/A';
+
+            // Card 1: f(x)
+            document.getElementById('fxVal').innerText = formatVal(fx);
+            document.getElementById('fxSlopeVal').innerText = formatVal(f1x);
+
+            const fxMonoEl = document.getElementById('fxMonotonicity');
+            if (f1x !== null) {
+                if (Math.abs(f1x) < 0.001) {
+                    fxMonoEl.className = "text-xs font-semibold flex items-center gap-1.5 text-purple-400";
+                    fxMonoEl.innerHTML = `<i class="fa-solid fa-pause"></i> Critical Point (Slope = 0)`;
+                } else if (f1x > 0) {
+                    fxMonoEl.className = "text-xs font-semibold flex items-center gap-1.5 text-emerald-400";
+                    fxMonoEl.innerHTML = `<i class="fa-solid fa-arrow-trend-up"></i> Increasing (f' > 0)`;
+                } else {
+                    fxMonoEl.className = "text-xs font-semibold flex items-center gap-1.5 text-rose-400";
+                    fxMonoEl.innerHTML = `<i class="fa-solid fa-arrow-trend-down"></i> Decreasing (f' < 0)`;
+                }
+            }
+
+            const fxConcEl = document.getElementById('fxConcavity');
+            if (f2x !== null) {
+                if (Math.abs(f2x) < 0.001) {
+                    fxConcEl.className = "text-xs font-semibold flex items-center gap-1.5 text-purple-400";
+                    fxConcEl.innerHTML = `<i class="fa-solid fa-grip-lines"></i> Inflection Point (f'' = 0)`;
+                } else if (f2x > 0) {
+                    fxConcEl.className = "text-xs font-semibold flex items-center gap-1.5 text-amber-400";
+                    fxConcEl.innerHTML = `<i class="fa-solid fa-face-smile"></i> Concave Upward (f'' > 0)`;
+                } else {
+                    fxConcEl.className = "text-xs font-semibold flex items-center gap-1.5 text-cyan-400";
+                    fxConcEl.innerHTML = `<i class="fa-solid fa-face-frown"></i> Concave Downward (f'' < 0)`;
+                }
+            }
+
+            // Card 2: f'(x)
+            document.getElementById('f1xVal').innerText = formatVal(f1x);
+            document.getElementById('f1xSlopeVal').innerText = formatVal(f2x);
+
+            const f1xMonoEl = document.getElementById('f1xMonotonicity');
+            if (f2x !== null) {
+                if (Math.abs(f2x) < 0.001) {
+                    f1xMonoEl.className = "text-xs font-semibold flex items-center gap-1.5 text-purple-400";
+                    f1xMonoEl.innerHTML = `<i class="fa-solid fa-pause"></i> Stationary Slope`;
+                } else if (f2x > 0) {
+                    f1xMonoEl.className = "text-xs font-semibold flex items-center gap-1.5 text-emerald-400";
+                    f1xMonoEl.innerHTML = `<i class="fa-solid fa-arrow-trend-up"></i> f'(x) Increasing`;
+                } else {
+                    f1xMonoEl.className = "text-xs font-semibold flex items-center gap-1.5 text-rose-400";
+                    f1xMonoEl.innerHTML = `<i class="fa-solid fa-arrow-trend-down"></i> f'(x) Decreasing`;
+                }
+            }
+
+            const f1xConcEl = document.getElementById('f1xConcavity');
+            if (f3x !== null) {
+                if (Math.abs(f3x) < 0.001) {
+                    f1xConcEl.className = "text-xs font-semibold flex items-center gap-1.5 text-slate-400";
+                    f1xConcEl.innerHTML = `<i class="fa-solid fa-minus"></i> Linear f'(x)`;
+                } else if (f3x > 0) {
+                    f1xConcEl.className = "text-xs font-semibold flex items-center gap-1.5 text-amber-400";
+                    f1xConcEl.innerHTML = `<i class="fa-solid fa-smile"></i> Concave Up (f''' > 0)`;
+                } else {
+                    f1xConcEl.className = "text-xs font-semibold flex items-center gap-1.5 text-cyan-400";
+                    f1xConcEl.innerHTML = `<i class="fa-solid fa-frown"></i> Concave Down (f''' < 0)`;
+                }
+            }
+
+            // Card 3: f''(x)
+            document.getElementById('f2xVal').innerText = formatVal(f2x);
+            document.getElementById('f2xSlopeVal').innerText = formatVal(f3x);
+            document.getElementById('f3xVal').innerText = formatVal(f3x);
+
+            const f2xMonoEl = document.getElementById('f2xMonotonicity');
+            if (f3x !== null) {
+                if (Math.abs(f3x) < 0.001) {
+                    f2xMonoEl.className = "text-xs font-semibold flex items-center gap-1.5 text-slate-400";
+                    f2xMonoEl.innerHTML = `<i class="fa-solid fa-minus"></i> Constant f''(x)`;
+                } else if (f3x > 0) {
+                    f2xMonoEl.className = "text-xs font-semibold flex items-center gap-1.5 text-emerald-400";
+                    f2xMonoEl.innerHTML = `<i class="fa-solid fa-arrow-trend-up"></i> f''(x) Increasing`;
+                } else {
+                    f2xMonoEl.className = "text-xs font-semibold flex items-center gap-1.5 text-rose-400";
+                    f2xMonoEl.innerHTML = `<i class="fa-solid fa-arrow-trend-down"></i> f''(x) Decreasing`;
+                }
+            }
+        }
+    </script>
+</body>
+</html>
