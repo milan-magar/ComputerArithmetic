@@ -3,348 +3,164 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Inverse Matrix Method — Step-by-Step Solver</title>
+<title>Inverse Matrix Method — Solver</title>
 <style>
   * { box-sizing: border-box; }
-
   body {
-    margin: 0;
-    padding: 0;
-    background: #eef2f9;
+    margin: 0; padding: 0;
+    background: #e8dfd0;
     color: #1e293b;
     font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-    line-height: 1.6;
+    font-size: 14px;
+    line-height: 1.45;
   }
+  .wrap { max-width: 900px; margin: 0 auto; padding: 20px 14px 50px; }
 
-  .wrap {
-    max-width: 980px;
-    margin: 0 auto;
-    padding: 40px 20px 100px;
-  }
-
-  header h1 {
-    margin: 0 0 8px;
-    font-size: 1.9rem;
-    letter-spacing: -0.5px;
-    color: #0f172a;
-  }
-
-  header p {
-    margin: 0 0 32px;
-    color: #64748b;
-    font-size: 0.98rem;
-  }
+  header h1 { margin: 0 0 4px; font-size: 1.35rem; color: #3b2f1c; letter-spacing: -0.3px; }
+  header p { margin: 0 0 16px; color: #7c6a4d; font-size: 0.85rem; }
 
   .card {
-    background: #fff;
-    border-radius: 16px;
-    padding: 28px;
-    margin-bottom: 24px;
-    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08),
-                0 12px 32px -18px rgba(15, 23, 42, 0.25);
+    background: #f8f3ea;
+    border-radius: 10px;
+    padding: 14px 16px;
+    margin-bottom: 12px;
+    box-shadow: 0 1px 2px rgba(59,47,28,.07), 0 6px 18px -14px rgba(59,47,28,.25);
   }
+  .card h2 { margin: 0 0 10px; font-size: 0.95rem; color: #3b2f1c; font-weight: 650; }
 
-  .card h2 {
-    margin: 0 0 20px;
-    font-size: 1.1rem;
-    color: #0f172a;
-    font-weight: 650;
-  }
-
-  .field {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    margin-bottom: 22px;
-    flex-wrap: wrap;
-  }
-
-  .field label {
-    font-weight: 600;
-    font-size: 0.95rem;
-    color: #334155;
-  }
-
+  .field { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; }
+  .field label { font-weight: 600; font-size: 0.85rem; color: #55452c; }
   select {
-    padding: 10px 14px;
-    border: 1.5px solid #cbd5e1;
-    border-radius: 9px;
-    background: #fff;
-    color: #1e293b;
-    font-size: 0.95rem;
-    font-family: inherit;
-    cursor: pointer;
+    padding: 6px 10px; border: 1.4px solid #c9b99c; border-radius: 6px;
+    background: #fdfaf4; color: #3b2f1c; font-size: 0.85rem; font-family: inherit; cursor: pointer;
   }
+  select:focus { outline: none; border-color: #b45309; box-shadow: 0 0 0 2px rgba(180,83,9,.15); }
 
-  select:focus {
-    outline: none;
-    border-color: #2563eb;
-    box-shadow: 0 0 0 3px #dbeafe;
-  }
-
-  .eq-row {
-    display: flex;
-    align-items: center;
-    gap: 9px;
-    margin-bottom: 14px;
-    flex-wrap: wrap;
-  }
-
+  .eq-row { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; flex-wrap: wrap; }
   .eq-row input {
-    width: 72px;
-    padding: 10px 8px;
-    border: 1.5px solid #cbd5e1;
-    border-radius: 9px;
-    background: #fff;
-    color: #0f172a;
-    font-size: 1rem;
-    font-family: inherit;
-    text-align: center;
-    transition: border-color 0.15s, box-shadow 0.15s;
+    width: 56px; padding: 6px 4px;
+    border: 1.4px solid #c9b99c; border-radius: 6px;
+    background: #fdfaf4; color: #3b2f1c;
+    font-size: 0.9rem; font-family: inherit; text-align: center;
   }
+  .eq-row input:focus { outline: none; border-color: #b45309; box-shadow: 0 0 0 2px rgba(180,83,9,.15); }
 
-  .eq-row input:focus {
-    outline: none;
-    border-color: #2563eb;
-    box-shadow: 0 0 0 3px #dbeafe;
-  }
+  .var { font-family: Georgia, serif; font-style: italic; font-size: 1rem; color: #55452c; }
+  .op { color: #a3906e; font-size: 0.9rem; }
 
-  .var {
-    font-family: Georgia, 'Times New Roman', serif;
-    font-style: italic;
-    font-size: 1.2rem;
-    color: #334155;
-    min-width: 14px;
-  }
-
-  .op { color: #94a3b8; font-size: 1rem; margin: 0 2px; }
-
-  .hint {
-    font-size: 0.85rem;
-    color: #94a3b8;
-    margin: 6px 0 18px;
-  }
+  .hint { font-size: 0.75rem; color: #a3906e; margin: 2px 0 10px; }
 
   button.solve {
-    padding: 12px 32px;
-    border: none;
-    border-radius: 10px;
-    background: linear-gradient(135deg, #2563eb, #1d4ed8);
-    color: #fff;
-    font-size: 1rem;
-    font-weight: 600;
-    font-family: inherit;
-    cursor: pointer;
-    box-shadow: 0 6px 18px -6px rgba(37, 99, 235, 0.6);
-    transition: transform 0.12s, box-shadow 0.12s;
+    padding: 8px 20px; border: none; border-radius: 7px;
+    background: linear-gradient(135deg, #b45309, #92400e);
+    color: #fff8ec; font-size: 0.88rem; font-weight: 600; font-family: inherit;
+    cursor: pointer; box-shadow: 0 4px 12px -5px rgba(180,83,9,.6);
+    transition: transform .1s;
   }
-
-  button.solve:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 10px 24px -8px rgba(37, 99, 235, 0.7);
-  }
-
+  button.solve:hover { transform: translateY(-1px); }
   button.solve:active { transform: translateY(0); }
 
   .step {
-    background: #fff;
-    border-radius: 16px;
-    padding: 22px 26px;
-    margin-bottom: 20px;
-    border-left: 4px solid #2563eb;
-    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.07),
-                0 10px 28px -18px rgba(15, 23, 42, 0.3);
+    background: #faf5ec; border-radius: 10px;
+    padding: 12px 16px; margin-bottom: 10px;
+    border-left: 3px solid #b45309;
+    box-shadow: 0 1px 2px rgba(59,47,28,.05);
   }
+  .step.answer { border-left-color: #15803d; background: linear-gradient(135deg, #eef7ec, #dcf0d8); }
+  .step.error  { border-left-color: #b91c1c; background: #fbeeee; }
 
-  .step.answer {
-    border-left-color: #16a34a;
-    background: linear-gradient(135deg, #f0fdf4, #dcfce7);
-  }
-
-  .step.error {
-    border-left-color: #dc2626;
-    background: #fef2f2;
-  }
-
-  .step-head {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 14px;
-  }
-
+  .step-head { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
   .badge {
-    flex-shrink: 0;
-    width: 28px;
-    height: 28px;
-    border-radius: 50%;
-    background: #2563eb;
-    color: #fff;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.85rem;
-    font-weight: 700;
+    flex-shrink: 0; width: 22px; height: 22px; border-radius: 50%;
+    background: #b45309; color: #fff8ec;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.72rem; font-weight: 700;
   }
+  .step.answer .badge { background: #15803d; }
+  .step.error  .badge { background: #b91c1c; }
+  .step-head h2 { margin: 0; font-size: 0.88rem; color: #3b2f1c; font-weight: 650; }
+  .step-body p { margin: 0 0 6px; font-size: 0.82rem; color: #55452c; }
 
-  .step.answer .badge { background: #16a34a; }
-  .step.error .badge { background: #dc2626; }
-
-  .step-head h2 {
-    margin: 0;
-    font-size: 1.02rem;
-    color: #0f172a;
-    font-weight: 650;
-  }
-
-  .step-body p {
-    margin: 0 0 10px;
-    font-size: 0.95rem;
-    color: #475569;
-  }
-
-  /* ---------- matrix rendering ---------- */
+  /* matrix */
   .mathline {
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 8px;
-    padding: 14px 6px;
-    font-size: 1rem;
-    overflow-x: auto;
+    display: flex; align-items: center; flex-wrap: wrap; gap: 4px;
+    padding: 6px 2px; font-size: 0.88rem; overflow-x: auto;
   }
-
-  .matrix {
-    display: inline-flex;
-    align-items: stretch;
-    vertical-align: middle;
-    margin: 4px 6px;
-  }
-
+  .matrix { display: inline-flex; align-items: stretch; vertical-align: middle; margin: 2px 4px; }
   .matrix .brk {
-    width: 7px;
-    border: 1.8px solid #1e293b;
-    border-radius: 3px;
-    flex-shrink: 0;
+    width: 5px; border: 1.5px solid #3b2f1c; border-radius: 2px; flex-shrink: 0;
   }
   .matrix .brk.l { border-right: none; border-top-right-radius: 0; border-bottom-right-radius: 0; }
   .matrix .brk.r { border-left: none;  border-top-left-radius: 0;  border-bottom-left-radius: 0; }
-
-  .matrix table {
-    border-collapse: collapse;
-    margin: 0 4px;
-  }
+  .matrix table { border-collapse: collapse; margin: 0 2px; }
   .matrix td {
-    padding: 6px 11px;
-    text-align: center;
-    font-family: Georgia, 'Times New Roman', serif;
-    font-size: 1rem;
-    line-height: 1.3;
+    padding: 3px 7px; text-align: center;
+    font-family: Georgia, serif; font-size: 0.85rem; line-height: 1.2;
     white-space: nowrap;
   }
-  .matrix td.divider {
-    border-left: 1.5px solid #64748b;
-    padding-left: 15px;
+  .matrix td.divider { border-left: 1.2px solid #a3906e; padding-left: 10px; }
+  .matrix td.changed {
+    background: #fde68a; color: #78350f; font-weight: 700;
+    box-shadow: inset 0 0 0 1.2px #f59e0b; border-radius: 3px;
   }
 
-  /* ---------- fractions ---------- */
-  .frac {
-    display: inline-flex;
-    align-items: center;
-    vertical-align: middle;
-    font-size: 0.92em;
-    line-height: 1.05;
-  }
-  .frac .sign { padding-right: 2px; }
+  .frac { display: inline-flex; align-items: center; vertical-align: middle; font-size: 0.85em; line-height: 1; }
+  .frac .sign { padding-right: 1px; }
   .frac .stack { display: inline-block; text-align: center; vertical-align: middle; }
-  .frac .num {
-    display: block;
-    border-bottom: 1.3px solid currentColor;
-    padding: 0 4px;
-  }
-  .frac .den { display: block; padding: 0 4px; }
+  .frac .num { display: block; border-bottom: 1.1px solid currentColor; padding: 0 2px; }
+  .frac .den { display: block; padding: 0 2px; }
 
-  /* ---------- equations ---------- */
-  .eqs {
-    font-family: Georgia, 'Times New Roman', serif;
-    font-size: 1.05rem;
-    line-height: 2;
-    padding: 6px 4px;
-    color: #0f172a;
-  }
+  .eqs { font-family: Georgia, serif; font-size: 0.88rem; line-height: 1.6; padding: 2px; color: #3b2f1c; }
   .eqs .v { font-style: italic; }
-  .eqs div { padding: 2px 0; }
+  .eqs div { padding: 1px 0; }
 
-  /* ---------- op label ---------- */
   .op-label {
-    display: inline-block;
-    margin: 14px 0 8px;
-    padding: 6px 14px;
-    background: #eff6ff;
-    border: 1px solid #bfdbfe;
-    border-radius: 8px;
-    font-family: 'Segoe UI', sans-serif;
-    font-size: 0.9rem;
-    color: #1e40af;
-    font-weight: 600;
+    display: block; margin: 8px 0 6px; padding: 6px 10px;
+    background: #fef3c7; border: 1px solid #fcd34d; border-radius: 6px;
+    font-size: 0.78rem; color: #78350f;
   }
+  .op-label .op-head {
+    font-weight: 700; color: #92400e; margin-bottom: 2px;
+    font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.4px;
+  }
+  .op-label .op-line { font-weight: 600; padding: 1px 0; }
 
-  .op-label + p { margin-top: 2px; }
-
-  /* ---------- answer ---------- */
   .answer-line {
-    font-family: Georgia, 'Times New Roman', serif;
-    font-size: 1.35rem;
-    color: #14532d;
-    padding: 8px 4px;
-    letter-spacing: 0.3px;
+    font-family: Georgia, serif; font-size: 1.1rem; color: #14532d;
+    padding: 4px 2px; letter-spacing: 0.2px;
   }
   .answer-line .v { font-style: italic; }
   .answer-line .val { font-weight: 700; }
-  .answer-line .sep { color: #64748b; margin: 0 8px; }
+  .answer-line .sep { color: #4d7c0f; margin: 0 5px; }
 
-  .empty {
-    text-align: center;
-    color: #94a3b8;
-    padding: 40px 20px;
-    font-size: 0.95rem;
-  }
-
-  .mini { color: #64748b; font-size: 0.88rem; margin: 4px 0 0; }
+  .empty { text-align: center; color: #a3906e; padding: 20px 12px; font-size: 0.85rem; }
 
   @media (max-width: 520px) {
-    .wrap { padding: 24px 14px 60px; }
-    .card, .step { padding: 18px; }
-    .eq-row input { width: 60px; }
-    .matrix td { padding: 5px 8px; font-size: 0.92rem; }
+    .wrap { padding: 12px 8px 30px; }
+    .card, .step { padding: 10px 12px; }
+    .eq-row input { width: 46px; }
+    .matrix td { padding: 2px 5px; font-size: 0.78rem; }
   }
 </style>
 </head>
-
 <body>
 <div class="wrap">
   <header>
     <h1>Inverse Matrix Method Solver</h1>
-    <p>Solve a system of 2 or 3 linear equations using <em>X = A⁻¹B</em> — with every row operation shown.</p>
+    <p>Solve a 2×2 or 3×3 system using <em>X = A⁻¹B</em>, with row operations and changes highlighted.</p>
   </header>
 
   <div class="card">
     <h2>Enter the system</h2>
-
     <div class="field">
-      <label for="nVars">Number of variables</label>
+      <label for="nVars">Variables</label>
       <select id="nVars">
-        <option value="2">2 variables &nbsp;(x, y)</option>
-        <option value="3" selected>3 variables &nbsp;(x, y, z)</option>
+        <option value="2">2 (x, y)</option>
+        <option value="3" selected>3 (x, y, z)</option>
       </select>
     </div>
-
     <div id="inputArea"></div>
-
-    <p class="hint">
-      You may enter integers (2), decimals (0.5) or simple fractions (1/2). Use a minus sign for negatives.
-    </p>
-
+    <p class="hint">Integers (2), decimals (0.5) or fractions (1/2). Minus sign for negatives.</p>
     <button class="solve" id="solveBtn">Solve system</button>
   </div>
 
@@ -354,385 +170,347 @@
 </div>
 
 <script>
-/* ============================================================
-   1. EXACT FRACTION ARITHMETIC
-   ============================================================ */
-function gcd(a, b) {
-  a = Math.abs(a); b = Math.abs(b);
-  while (b) { const t = b; b = a % b; a = t; }
-  return a;
+/* ---------- fraction arithmetic ---------- */
+function gcd(a,b){a=Math.abs(a);b=Math.abs(b);while(b){const t=b;b=a%b;a=t;}return a;}
+function Frac(n,d){
+  if(d===undefined)d=1;
+  if(isNaN(n)||isNaN(d)){this.n=0;this.d=1;return;}
+  if(d===0)throw new Error('Division by zero');
+  if(d<0){n=-n;d=-d;}
+  const g=gcd(Math.abs(n),Math.abs(d))||1;
+  this.n=n/g;this.d=d/g;
 }
+Frac.prototype.add=function(o){return new Frac(this.n*o.d+o.n*this.d,this.d*o.d);};
+Frac.prototype.sub=function(o){return new Frac(this.n*o.d-o.n*this.d,this.d*o.d);};
+Frac.prototype.mul=function(o){return new Frac(this.n*o.n,this.d*o.d);};
+Frac.prototype.div=function(o){return new Frac(this.n*o.d,this.d*o.n);};
+Frac.prototype.neg=function(){return new Frac(-this.n,this.d);};
+Frac.prototype.isZero=function(){return this.n===0;};
+Frac.prototype.isNeg=function(){return this.n<0;};
+Frac.prototype.isOne=function(){return this.n===1&&this.d===1;};
 
-function Frac(n, d) {
-  if (d === undefined) d = 1;
-  if (d === 0) throw new Error('Division by zero');
-  if (d < 0) { n = -n; d = -d; }
-  const g = gcd(Math.abs(n), Math.abs(d)) || 1;
-  this.n = n / g;
-  this.d = d / g;
-}
-Frac.prototype.add = function (o) { return new Frac(this.n * o.d + o.n * this.d, this.d * o.d); };
-Frac.prototype.sub = function (o) { return new Frac(this.n * o.d - o.n * this.d, this.d * o.d); };
-Frac.prototype.mul = function (o) { return new Frac(this.n * o.n, this.d * o.d); };
-Frac.prototype.div = function (o) { return new Frac(this.n * o.d, this.d * o.n); };
-Frac.prototype.neg = function () { return new Frac(-this.n, this.d); };
-Frac.prototype.isZero = function () { return this.n === 0; };
-Frac.prototype.isNeg = function () { return this.n < 0; };
-Frac.prototype.isOne = function () { return this.n === 1 && this.d === 1; };
-
-function parseNum(s) {
-  s = String(s).trim();
-  if (s === '') return new Frac(0);
-  if (s.indexOf('/') !== -1) {
-    const p = s.split('/');
-    const a = parseFloat(p[0]), b = parseFloat(p[1]);
-    if (isNaN(a) || isNaN(b) || b === 0) throw new Error('bad');
-    return new Frac(Math.round(a * 1e6), Math.round(b * 1e6));
+function parseNum(s){
+  s=String(s).trim();
+  if(s==='')return new Frac(0);
+  if(s.indexOf('/')!==-1){
+    const p=s.split('/');
+    const a=parseFloat(p[0]),b=parseFloat(p[1]);
+    if(isNaN(a)||isNaN(b)||b===0||!isFinite(a)||!isFinite(b))throw new Error('bad');
+    return new Frac(Math.round(a*1e6),Math.round(b*1e6));
   }
-  if (s.indexOf('.') !== -1) {
-    const dec = s.split('.')[1].length;
-    const mult = Math.pow(10, dec);
-    const v = parseFloat(s);
-    if (isNaN(v)) throw new Error('bad');
-    return new Frac(Math.round(v * mult), mult);
+  if(s.indexOf('.')!==-1){
+    const dec=s.split('.')[1].length;
+    const mult=Math.pow(10,dec);
+    const v=parseFloat(s);
+    if(isNaN(v)||!isFinite(v))throw new Error('bad');
+    return new Frac(Math.round(v*mult),mult);
   }
-  const v = parseInt(s, 10);
-  if (isNaN(v)) throw new Error('bad');
+  const v=parseInt(s,10);
+  if(isNaN(v)||!isFinite(v))throw new Error('bad');
   return new Frac(v);
 }
 
-/* ============================================================
-   2. HTML RENDERERS (no external math library needed)
-   ============================================================ */
-const SUBS = { 1: '₁', 2: '₂', 3: '₃', 4: '₄', 5: '₅' };
-function sub(n) { return SUBS[n] || String(n); }
-
-function renderFrac(f) {
-  if (f.d === 1) return String(f.n);
-  const sign = f.n < 0 ? '\u2212' : '';
-  const num = Math.abs(f.n);
-  return '<span class="frac">' +
-    (sign ? '<span class="sign">' + sign + '</span>' : '') +
-    '<span class="stack">' +
-      '<span class="num">' + num + '</span>' +
-      '<span class="den">' + f.d + '</span>' +
-    '</span>' +
-  '</span>';
+/* ---------- HTML renderers ---------- */
+function renderFrac(f){
+  if(!f||f.n===undefined||f.d===undefined)return '?';
+  if(f.d===1)return String(f.n);
+  const sign=f.n<0?'\u2212':'';
+  const num=Math.abs(f.n);
+  return '<span class="frac">'+
+    (sign?'<span class="sign">'+sign+'</span>':'')+
+    '<span class="stack"><span class="num">'+num+'</span>'+
+    '<span class="den">'+f.d+'</span></span></span>';
 }
 
-/* Render a matrix as HTML. dividerAfter = column index AFTER which to
-   place a vertical bar (used for augmented matrices). */
-function renderMatrix(M, dividerAfter) {
-  let t = '<table>';
-  for (let i = 0; i < M.length; i++) {
-    t += '<tr>';
-    for (let j = 0; j < M[i].length; j++) {
-      const cls = (dividerAfter !== undefined && j === dividerAfter)
-        ? ' class="divider"' : '';
-      t += '<td' + cls + '>' + renderFrac(M[i][j]) + '</td>';
+function renderMatrix(M,dividerAfter,highlight){
+  let t='<table>';
+  for(let i=0;i<M.length;i++){
+    t+='<tr>';
+    for(let j=0;j<M[i].length;j++){
+      const cls=[];
+      if(dividerAfter!==undefined&&j===dividerAfter)cls.push('divider');
+      if(highlight&&highlight[i]&&highlight[i][j])cls.push('changed');
+      t+='<td'+(cls.length?' class="'+cls.join(' ')+'"':'')+'>'+renderFrac(M[i][j])+'</td>';
     }
-    t += '</tr>';
+    t+='</tr>';
   }
-  t += '</table>';
-  return '<span class="matrix">' +
-    '<span class="brk l"></span>' + t + '<span class="brk r"></span>' +
-  '</span>';
+  t+='</table>';
+  return '<span class="matrix"><span class="brk l"></span>'+t+'<span class="brk r"></span></span>';
 }
 
-/* Render a column vector (list of fracs). */
-function renderColumn(items) {
-  return renderMatrix(items.map(function (x) { return [x]; }));
+function renderColumn(items){return renderMatrix(items.map(x=>[x]));}
+
+function renderVariableColumn(vars){
+  let t='<table>';
+  for(let i=0;i<vars.length;i++)t+='<tr><td><span class="v">'+vars[i]+'</span></td></tr>';
+  t+='</table>';
+  return '<span class="matrix"><span class="brk l"></span>'+t+'<span class="brk r"></span></span>';
 }
 
-/* Render the equation system like:
-      x + y + z = 7
-      x + 2y + 3z = 16
-      x + 3y + 4z = 22   */
-function renderSystem(n, A, B) {
-  const vars = ['x', 'y', 'z'];
-  let html = '<div class="eqs">';
-  for (let i = 0; i < n; i++) {
-    let line = '';
-    for (let j = 0; j < n; j++) {
-      const c = A[i][j];
-      if (c.isZero()) continue;
-
-      const abs = new Frac(Math.abs(c.n), c.d);
+function renderSystem(n,A,B){
+  const vars=['x','y','z'];
+  let html='<div class="eqs">';
+  for(let i=0;i<n;i++){
+    let line='';
+    for(let j=0;j<n;j++){
+      const c=A[i][j];
+      if(c.isZero())continue;
+      const abs=new Frac(Math.abs(c.n),c.d);
       let coef;
-      if (abs.isOne()) coef = '';                            // 1x → x
-      else if (abs.d === 1) coef = String(abs.n);            // 2x, 3x
-      else coef = renderFrac(abs);                           // (1/2)x
-
-      const term = coef + '<span class="v">' + vars[j] + '</span>';
-
-      if (line === '') {
-        line = (c.isNeg() ? '\u2212' : '') + term;
-      } else {
-        line += (c.isNeg() ? ' \u2212 ' : ' + ') + term;
-      }
+      if(abs.isOne())coef='';
+      else if(abs.d===1)coef=String(abs.n);
+      else coef=renderFrac(abs);
+      const term=coef+'<span class="v">'+vars[j]+'</span>';
+      if(line==='')line=(c.isNeg()?'\u2212':'')+term;
+      else line+=(c.isNeg()?' \u2212 ':' + ')+term;
     }
-    if (line === '') line = '0';
-    html += '<div>' + line + ' = ' + renderFrac(B[i]) + '</div>';
+    if(line==='')line='0';
+    html+='<div>'+line+' = '+renderFrac(B[i])+'</div>';
   }
-  html += '</div>';
+  html+='</div>';
   return html;
 }
 
-/* ============================================================
-   3. GAUSS–JORDAN — produces A⁻¹ and records every step
-   ============================================================ */
-function gaussJordan(n, A) {
-  /* Build [A | I] */
-  let M = A.map(function (row, i) {
-    const idRow = [];
-    for (let j = 0; j < n; j++) idRow.push(new Frac(i === j ? 1 : 0));
-    return row.concat(idRow);
-  });
-
-  const steps = [];
-
-  for (let col = 0; col < n; col++) {
-    /* --- swap if pivot is zero --- */
-    if (M[col][col].isZero()) {
-      let sw = -1;
-      for (let r = col + 1; r < n; r++) {
-        if (!M[r][col].isZero()) { sw = r; break; }
-      }
-      if (sw === -1) return { singular: true, steps: steps };
-
-      const tmp = M[col]; M[col] = M[sw]; M[sw] = tmp;
-      steps.push({
-        op: 'R' + sub(col + 1) + ' \u2194 R' + sub(sw + 1),
-        desc: 'Interchange rows ' + (col + 1) + ' and ' + (sw + 1) +
-              ' to bring a non-zero pivot into position (' + (col + 1) + ',' + (col + 1) + ').',
-        mat: M.map(function (r) { return r.slice(); })
-      });
-    }
-
-    /* --- scale pivot to 1 --- */
-    const pivot = M[col][col];
-    if (!pivot.isOne()) {
-      for (let j = 0; j < 2 * n; j++) M[col][j] = M[col][j].div(pivot);
-      const inv = new Frac(1).div(pivot);
-      steps.push({
-        op: 'R' + sub(col + 1) + ' \u2192 ' + renderFrac(inv) + ' \u00b7 R' + sub(col + 1),
-        desc: 'Divide row ' + (col + 1) + ' by ' + renderFrac(pivot) +
-              ' so the pivot becomes 1.',
-        mat: M.map(function (r) { return r.slice(); })
-      });
-    }
-
-    /* --- eliminate in every other row --- */
-    for (let row = 0; row < n; row++) {
-      if (row === col) continue;
-      const f = M[row][col];
-      if (f.isZero()) continue;
-
-      for (let j = 0; j < 2 * n; j++) {
-        M[row][j] = M[row][j].sub(f.mul(M[col][j]));
-      }
-
-      let opStr;
-      if (f.isNeg()) {
-        opStr = 'R' + sub(row + 1) + ' \u2192 R' + sub(row + 1) + ' + ' +
-                renderFrac(f.neg()) + ' \u00b7 R' + sub(col + 1);
-      } else {
-        opStr = 'R' + sub(row + 1) + ' \u2192 R' + sub(row + 1) + ' \u2212 ' +
-                renderFrac(f) + ' \u00b7 R' + sub(col + 1);
-      }
-
-      steps.push({
-        op: opStr,
-        desc: 'Use the pivot in row ' + (col + 1) +
-              ' to make the entry in row ' + (row + 1) +
-              ', column ' + (col + 1) + ' equal to zero.',
-        mat: M.map(function (r) { return r.slice(); })
-      });
-    }
-  }
-
-  const inv = M.map(function (row) { return row.slice(n); });
-  return { singular: false, inv: inv, steps: steps, final: M.map(function (r) { return r.slice(); }) };
+function subDigits(n){
+  const map='₀₁₂₃₄₅₆₇₈₉';
+  return String(n).split('').map(d=>{const i=parseInt(d,10);return isNaN(i)?d:map[i];}).join('');
 }
 
-/* ============================================================
-   4. BUILD THE FULL STEP-BY-STEP HTML SOLUTION
-   ============================================================ */
-function buildSolution(n, A, B) {
-  let stepNum = 0;
-  function step(title, body, cls) {
-    stepNum++;
-    return '<section class="step ' + (cls || '') + '">' +
-      '<div class="step-head"><span class="badge">' + stepNum + '</span>' +
-      '<h2>' + title + '</h2></div>' +
-      '<div class="step-body">' + body + '</div></section>';
+/* ---------- Gauss–Jordan with combined eliminations ---------- */
+function cloneMat(M){return M.map(r=>r.slice());}
+function computeHighlight(prev,curr){
+  const h=[];
+  for(let i=0;i<curr.length;i++){
+    h.push([]);
+    for(let j=0;j<curr[i].length;j++){
+      if(!prev){h[i].push(false);continue;}
+      const p=prev[i][j],c=curr[i][j];
+      h[i].push(p.n!==c.n||p.d!==c.d);
+    }
   }
+  return h;
+}
 
-  const vars = ['x', 'y', 'z'].slice(0, n);
-  let html = '';
-
-  /* -------- Step 1: write AX = B -------- */
-  let step1 = '<p>The given system of linear equations is:</p>' + renderSystem(n, A, B) +
-              '<p>Writing it in the matrix form <em>AX = B</em>:</p>' +
-              '<div class="mathline">' + renderMatrix(A) +
-              renderColumn(vars.map(function () { return new Frac(0); }).map(function () { return null; }).length ? [] : []) +
-              '</div>';
-  /* rebuild the AX=B line properly */
-  step1 = '<p>The given system of linear equations is:</p>' + renderSystem(n, A, B) +
-          '<p>Writing it in the matrix form <em>AX = B</em>:</p>' +
-          '<div class="mathline">' +
-            renderMatrix(A) +
-            renderColumn(vars.map(function (v) { return v; })).replace(/<td>([xyz])<\/td>/g, '<td><span class="v">$1</span></td>') +
-            '<span style="font-size:1.2rem;">=</span>' +
-            renderColumn(B) +
-          '</div>' +
-          '<p>where <em>A</em> is the coefficient matrix, <em>X</em> the variable ' +
-          'matrix and <em>B</em> the constant matrix.</p>';
-  html += step('Write the system in matrix form <em>AX = B</em>', step1);
-
-  /* -------- Step 2: augmented matrix [A : I] -------- */
-  const aug = A.map(function (row, i) {
-    const idRow = [];
-    for (let j = 0; j < n; j++) idRow.push(new Frac(i === j ? 1 : 0));
+function gaussJordan(n,A){
+  let M=A.map((row,i)=>{
+    const idRow=[];
+    for(let j=0;j<n;j++)idRow.push(new Frac(i===j?1:0));
     return row.concat(idRow);
   });
-  html += step('Form the augmented matrix [A : I]',
-    '<p>To find the inverse <em>A</em><sup>\u22121</sup>, we set up the augmented matrix ' +
-    '<em>[A : I]</em> and use row operations to reduce <em>A</em> to the identity ' +
-    'matrix <em>I</em>. Whatever appears on the right will then be <em>A</em><sup>\u22121</sup>.</p>' +
-    '<div class="mathline">[A : I] = ' + renderMatrix(aug, n) + '</div>');
+  const steps=[];
 
-  /* -------- Step 3: row reduction -------- */
-  const res = gaussJordan(n, A);
+  for(let col=0;col<n;col++){
+    // pivot swap
+    if(M[col][col].isZero()){
+      let sw=-1;
+      for(let r=col+1;r<n;r++){if(!M[r][col].isZero()){sw=r;break;}}
+      if(sw===-1)return{singular:true,steps:steps};
+      const prev=cloneMat(M);
+      const tmp=M[col];M[col]=M[sw];M[sw]=tmp;
+      steps.push({
+        ops:['R'+subDigits(col+1)+' \u2194 R'+subDigits(sw+1)],
+        title:'Pivot operation',
+        desc:'Interchange rows '+(col+1)+' and '+(sw+1)+' to bring a non-zero pivot into position.',
+        mat:cloneMat(M),
+        highlight:computeHighlight(prev,M)
+      });
+    }
 
-  if (res.singular) {
-    return html + '<section class="step error">' +
-      '<div class="step-head"><span class="badge">!</span>' +
-      '<h2>No unique solution</h2></div>' +
-      '<div class="step-body"><p>During row reduction a pivot column contained all zeros. ' +
-      'This means |A| = 0, so <em>A</em> is singular and <em>A</em><sup>\u22121</sup> ' +
-      'does not exist. The system has either no solution or infinitely many solutions.</p>' +
+    // pivot scale
+    const pivot=M[col][col];
+    if(!pivot.isOne()){
+      const prev=cloneMat(M);
+      for(let j=0;j<2*n;j++)M[col][j]=M[col][j].div(pivot);
+      const inv=new Frac(1).div(pivot);
+      steps.push({
+        ops:['R'+subDigits(col+1)+' \u2192 '+renderFrac(inv)+' \u00b7 R'+subDigits(col+1)],
+        title:'Pivot operation',
+        desc:'Divide row '+(col+1)+' by '+renderFrac(pivot)+' so the pivot becomes 1.',
+        mat:cloneMat(M),
+        highlight:computeHighlight(prev,M)
+      });
+    }
+
+    // combined eliminations
+    const prev=cloneMat(M);
+    const ops=[];
+    let anyChange=false;
+    for(let row=0;row<n;row++){
+      if(row===col)continue;
+      const f=M[row][col];
+      if(f.isZero())continue;
+      anyChange=true;
+      for(let j=0;j<2*n;j++)M[row][j]=M[row][j].sub(f.mul(M[col][j]));
+      if(f.isNeg()){
+        ops.push('R'+subDigits(row+1)+' \u2192 R'+subDigits(row+1)+' + '+
+                 renderFrac(f.neg())+' \u00b7 R'+subDigits(col+1));
+      }else{
+        ops.push('R'+subDigits(row+1)+' \u2192 R'+subDigits(row+1)+' \u2212 '+
+                 renderFrac(f)+' \u00b7 R'+subDigits(col+1));
+      }
+    }
+    if(anyChange){
+      steps.push({
+        ops:ops,
+        title:'Elimination',
+        desc:'Use the pivot in row '+(col+1)+' to eliminate the other entries in column '+(col+1)+'.',
+        mat:cloneMat(M),
+        highlight:computeHighlight(prev,M)
+      });
+    }
+  }
+
+  const inv=M.map(r=>r.slice(n));
+  return {singular:false,inv:inv,steps:steps};
+}
+
+/* ---------- build solution ---------- */
+function renderOpLabel(s){
+  let out='<div class="op-label">';
+  out+='<div class="op-head">'+(s.title||'Operation')+'</div>';
+  s.ops.forEach(o=>{out+='<div class="op-line">'+o+'</div>';});
+  out+='</div>';
+  return out;
+}
+
+function buildSolution(n,A,B){
+  let stepNum=0;
+  const step=(title,body,cls)=>{
+    stepNum++;
+    return '<section class="step '+(cls||'')+'">'+
+      '<div class="step-head"><span class="badge">'+stepNum+'</span>'+
+      '<h2>'+title+'</h2></div>'+
+      '<div class="step-body">'+body+'</div></section>';
+  };
+  const vars=['x','y','z'].slice(0,n);
+  let html='';
+
+  // Step 1
+  html+=step('Write the system in matrix form <em>AX = B</em>',
+    '<p>The given system is:</p>'+renderSystem(n,A,B)+
+    '<p>In matrix form:</p>'+
+    '<div class="mathline">'+renderMatrix(A)+renderVariableColumn(vars)+
+    '<span style="font-size:1rem;">=</span>'+renderColumn(B)+'</div>');
+
+  // Step 2
+  const aug=A.map((row,i)=>{
+    const idRow=[];
+    for(let j=0;j<n;j++)idRow.push(new Frac(i===j?1:0));
+    return row.concat(idRow);
+  });
+  html+=step('Form the augmented matrix [A : I]',
+    '<p>To find <em>A</em><sup>\u22121</sup>, we form <em>[A : I]</em> and reduce <em>A</em> to <em>I</em>.</p>'+
+    '<div class="mathline">[A : I] = '+renderMatrix(aug,n)+'</div>');
+
+  // Row reduction
+  const res=gaussJordan(n,A);
+
+  if(res.singular){
+    let body='';
+    res.steps.forEach(s=>{
+      body+=renderOpLabel(s);
+      body+='<p>'+s.desc+'</p>';
+      body+='<div class="mathline">'+renderMatrix(s.mat,n,s.highlight)+'</div>';
+    });
+    if(body)html+=step('Row reduction (halted)',body);
+    return html+'<section class="step error">'+
+      '<div class="step-head"><span class="badge">!</span>'+
+      '<h2>No unique solution</h2></div>'+
+      '<div class="step-body"><p>A pivot column contained all zeros, so |A| = 0 and <em>A</em><sup>\u22121</sup> does not exist.</p>'+
       '</div></section>';
   }
 
-  let gaussBody = '<p>Apply row operations to transform [A : I] into [I : A\u207B\u00B9].</p>';
-  res.steps.forEach(function (s) {
-    gaussBody += '<div class="op-label">' + s.op + '</div>';
-    gaussBody += '<p>' + s.desc + '</p>';
-    gaussBody += '<div class="mathline">' + renderMatrix(s.mat, n) + '</div>';
+  let gaussBody='<p>Apply row operations to transform [A : I] into [I : A\u207B\u00B9]. '+
+    'Changed cells are highlighted in <span style="background:#fde68a;padding:1px 5px;'+
+    'border-radius:3px;font-weight:600;color:#78350f;">amber</span>.</p>';
+
+  res.steps.forEach(s=>{
+    gaussBody+=renderOpLabel(s);
+    gaussBody+='<p>'+s.desc+'</p>';
+    gaussBody+='<div class="mathline">'+renderMatrix(s.mat,n,s.highlight)+'</div>';
   });
-  html += step('Reduce [A : I] to [I : A\u207B\u00B9] by row operations', gaussBody);
+  html+=step('Reduce [A : I] to [I : A\u207B\u00B9] by row operations',gaussBody);
 
-  /* -------- Step 4: extract A⁻¹ -------- */
-  html += step('Read off the inverse matrix <em>A</em><sup>\u22121</sup>',
-    '<p>The left half of the final augmented matrix is now the identity matrix, so the ' +
-    'right half is the inverse of <em>A</em>:</p>' +
-    '<div class="mathline"><em>A</em><sup>\u22121</sup> = ' + renderMatrix(res.inv) + '</div>');
+  // Inverse
+  html+=step('Read off the inverse <em>A</em><sup>\u22121</sup>',
+    '<p>The left half is now <em>I</em>, so the right half is the inverse:</p>'+
+    '<div class="mathline"><em>A</em><sup>\u22121</sup> = '+renderMatrix(res.inv)+'</div>');
 
-  /* -------- Step 5: X = A⁻¹B -------- */
-  const X = res.inv.map(function (row) {
-    return row.reduce(function (s, x, k) { return s.add(x.mul(B[k])); }, new Frac(0));
-  });
+  // X = A⁻¹B
+  const X=res.inv.map(row=>row.reduce((s,x,k)=>s.add(x.mul(B[k])),new Frac(0)));
+  html+=step('Compute <em>X = A</em><sup>\u22121</sup><em>B</em>',
+    '<div class="mathline"><em>X</em> = <em>A</em><sup>\u22121</sup><em>B</em> = '+
+    renderMatrix(res.inv)+renderColumn(B)+' = '+renderColumn(X)+'</div>');
 
-  html += step('Compute the solution <em>X = A</em><sup>\u22121</sup><em>B</em>',
-    '<p>Multiply the inverse matrix by the constant matrix:</p>' +
-    '<div class="mathline">' +
-      '<em>X</em> = <em>A</em><sup>\u22121</sup><em>B</em> = ' +
-      renderMatrix(res.inv) + renderColumn(B) + ' = ' + renderColumn(X) +
-    '</div>');
+  // Answer
+  const ansHtml=vars.map((v,i)=>'<span class="v">'+v+'</span> = <span class="val">'+
+    renderFrac(X[i])+'</span>').join('<span class="sep">,</span>');
+  html+='<section class="step answer">'+
+    '<div class="step-head"><span class="badge">\u2713</span>'+
+    '<h2>Solution</h2></div>'+
+    '<div class="step-body"><div class="answer-line">'+ansHtml+'</div></div></section>';
 
-  /* -------- Step 6: final answer -------- */
-  const ansHtml = vars.map(function (v, i) {
-    return '<span class="v">' + v + '</span> = <span class="val">' +
-           renderFrac(X[i]) + '</span>';
-  }).join('<span class="sep">,</span>');
-
-  html += '<section class="step answer">' +
-    '<div class="step-head"><span class="badge">\u2713</span>' +
-    '<h2>Solution</h2></div>' +
-    '<div class="step-body"><div class="answer-line">' + ansHtml + '</div></div></section>';
-
-  /* -------- Step 7: verification -------- */
-  const check = A.map(function (row) {
-    return row.reduce(function (s, x, k) { return s.add(x.mul(X[k])); }, new Frac(0));
-  });
-  const ok = check.every(function (f, i) {
-    return f.n === B[i].n && f.d === B[i].d;
-  });
-
-  html += step('Verification',
-    '<p>Substituting the values back into <em>AX</em>:</p>' +
-    '<div class="mathline">' +
-      '<em>AX</em> = ' + renderMatrix(A) + renderColumn(X) + ' = ' + renderColumn(check) +
-    '</div>' +
-    '<p>' + (ok
-      ? 'This equals <em>B</em>, so the solution is verified. \u2713'
-      : 'Note: the numerical check did not match exactly.') + '</p>');
+  // Verification
+  const check=A.map(row=>row.reduce((s,x,k)=>s.add(x.mul(X[k])),new Frac(0)));
+  const ok=check.every((f,i)=>f.n===B[i].n&&f.d===B[i].d);
+  html+=step('Verification',
+    '<div class="mathline"><em>AX</em> = '+renderMatrix(A)+renderColumn(X)+' = '+renderColumn(check)+'</div>'+
+    '<p>'+(ok?'This equals <em>B</em>, so the solution is verified. \u2713':'Check did not match exactly.')+'</p>');
 
   return html;
 }
 
-/* ============================================================
-   5. UI WIRING
-   ============================================================ */
-const DEFAULTS = {
-  2: { A: [['2', '3'], ['4', '-1']], B: ['13', '5'] },
-  3: { A: [['1', '1', '1'], ['1', '2', '3'], ['1', '3', '4']], B: ['7', '16', '22'] }
+/* ---------- UI ---------- */
+const DEFAULTS={
+  2:{A:[['2','3'],['4','-1']],B:['13','5']},
+  3:{A:[['1','1','1'],['1','2','3'],['1','3','4']],B:['7','16','22']}
 };
 
-function generateInputs() {
-  const n = parseInt(document.getElementById('nVars').value, 10);
-  const vars = ['x', 'y', 'z'].slice(0, n);
-  const d = DEFAULTS[n];
-  let html = '';
-
-  for (let i = 0; i < n; i++) {
-    html += '<div class="eq-row">';
-    for (let j = 0; j < n; j++) {
-      html += '<input type="text" id="a' + i + j + '" value="' + d.A[i][j] + '" inputmode="text" />';
-      html += '<span class="var">' + vars[j] + '</span>';
-      if (j < n - 1) html += '<span class="op">+</span>';
+function generateInputs(){
+  const n=parseInt(document.getElementById('nVars').value,10);
+  const vars=['x','y','z'].slice(0,n);
+  const d=DEFAULTS[n];
+  let html='';
+  for(let i=0;i<n;i++){
+    html+='<div class="eq-row">';
+    for(let j=0;j<n;j++){
+      html+='<input type="text" id="a'+i+j+'" value="'+d.A[i][j]+'" inputmode="text" />';
+      html+='<span class="var">'+vars[j]+'</span>';
+      if(j<n-1)html+='<span class="op">+</span>';
     }
-    html += '<span class="op">=</span>';
-    html += '<input type="text" id="b' + i + '" value="' + d.B[i] + '" inputmode="text" />';
-    html += '</div>';
+    html+='<span class="op">=</span>';
+    html+='<input type="text" id="b'+i+'" value="'+d.B[i]+'" inputmode="text" />';
+    html+='</div>';
   }
-
-  document.getElementById('inputArea').innerHTML = html;
-  document.getElementById('output').innerHTML =
-    '<div class="card empty">The step-by-step solution will appear here.</div>';
+  document.getElementById('inputArea').innerHTML=html;
+  document.getElementById('output').innerHTML='<div class="card empty">The step-by-step solution will appear here.</div>';
 }
 
-function solveSystem() {
-  const n = parseInt(document.getElementById('nVars').value, 10);
-  const A = [], B = [];
-
-  try {
-    for (let i = 0; i < n; i++) {
-      const row = [];
-      for (let j = 0; j < n; j++) {
-        row.push(parseNum(document.getElementById('a' + i + j).value));
-      }
+function solveSystem(){
+  const n=parseInt(document.getElementById('nVars').value,10);
+  const A=[],B=[];
+  try{
+    for(let i=0;i<n;i++){
+      const row=[];
+      for(let j=0;j<n;j++)row.push(parseNum(document.getElementById('a'+i+j).value));
       A.push(row);
-      B.push(parseNum(document.getElementById('b' + i).value));
+      B.push(parseNum(document.getElementById('b'+i).value));
     }
-  } catch (e) {
+  }catch(e){
     alert('Please enter valid numbers (integers, decimals like 0.5, or fractions like 1/2).');
     return;
   }
-
-  const out = document.getElementById('output');
-  try {
-    out.innerHTML = buildSolution(n, A, B);
-  } catch (err) {
-    out.innerHTML = '<div class="card error"><strong>Error:</strong> ' + err.message + '</div>';
+  const out=document.getElementById('output');
+  try{out.innerHTML=buildSolution(n,A,B);}
+  catch(err){
+    out.innerHTML='<div class="card error"><strong>Error:</strong> '+err.message+'</div>';
     console.error(err);
   }
-  out.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  out.scrollIntoView({behavior:'smooth',block:'start'});
 }
 
-document.getElementById('nVars').addEventListener('change', generateInputs);
-document.getElementById('solveBtn').addEventListener('click', solveSystem);
+document.getElementById('nVars').addEventListener('change',generateInputs);
+document.getElementById('solveBtn').addEventListener('click',solveSystem);
 generateInputs();
 </script>
 </body>
